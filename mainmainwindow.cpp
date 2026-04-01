@@ -12,9 +12,46 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QTextStream>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QSqlRecord>
+
+bool initDatabase() {
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("food_sharing.db");
+    
+    if (!db.open()) {
+        QMessageBox::critical(nullptr, "Database Error", "Could not open database");
+        return false;
+    }
+    
+    QSqlQuery query;
+    query.exec("CREATE TABLE IF NOT EXISTS people_sign ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+               "name TEXT NOT NULL,"
+               "people_id TEXT NOT NULL,"
+               "address TEXT NOT NULL,"
+               "contact TEXT NOT NULL,"
+               "notes TEXT,"
+               "signup_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
+    
+    query.exec("CREATE TABLE IF NOT EXISTS meal_requests ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+               "person_id INTEGER,"
+               "meal_count INTEGER NOT NULL,"
+               "request_date DATETIME DEFAULT CURRENT_TIMESTAMP,"
+               "FOREIGN KEY(person_id) REFERENCES people_sign(id))");
+    
+    return true;
+}
 
 int main(int argc, char* argv[]) {
     QApplication app (argc, argv);
+
+    if (!initDatabase()) {
+        return -1;
+    }
 
     QMainWindow window;
     window.setWindowTitle("Co-Pilots");
@@ -340,16 +377,22 @@ int main(int argc, char* argv[]) {
         QString address = peopleaddress->text();
         QString contact = peoplecontact->text();
         QString note = peoplenote->text();
+    
         if (name.isEmpty() || id.isEmpty() || address.isEmpty() || contact.isEmpty()) {
             QMessageBox::warning(signwindow, "Input Error", "Please fill in all required fields.");
             return;
         }
-        QFile file("people_sign.txt");
-        if (file.open(QIODevice::Append | QIODevice::Text)) {
-            QTextStream out(&file);
-            out << "Name: " << name << ", ID: " << id << ", Address: " << address
-                << ", Contact: " << contact << ", Notes: " << note << Qt::endl;
-            file.close();
+    
+        QSqlQuery query;
+        query.prepare("INSERT INTO people_sign (name, people_id, address, contact, notes) "
+                      "VALUES (:name, :id, :address, :contact, :notes)");
+        query.bindValue(":name", name);
+        query.bindValue(":id", id);
+        query.bindValue(":address", address);
+        query.bindValue(":contact", contact);
+        query.bindValue(":notes", note);
+    
+        if (query.exec()) {
             QMessageBox::information(signwindow, "Request Submitted", "Your sign-up information has been submitted.");
             peoplename->clear();
             peopleid->clear();
@@ -358,7 +401,7 @@ int main(int argc, char* argv[]) {
             peoplenote->clear();
             signwindow->close();
         } else {
-            QMessageBox::critical(signwindow, "File Error", "Could not open people_sign.txt for writing.");
+            QMessageBox::critical(signwindow, "Database Error", "Could not save data: " + query.lastError().text());
         }
     });
 
@@ -370,29 +413,33 @@ int main(int argc, char* argv[]) {
             QMessageBox::warning(peoplewindow, "Input Error", "Please enter the number of meals you need.");
             return;
         }
-
-        QString details;
-        QFile file1("people_sign.txt");
-        if (file1.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QTextStream in(&file1);
-            details = in.readAll();
-            file1.close();
-        } else {
-            QMessageBox::critical(peoplewindow, "File Error", "Could not open people_sign.txt for reading.");
+    
+        QSqlQuery query;
+        query.exec("SELECT id FROM people_sign ORDER BY id DESC LIMIT 1");
+    
+        int personId = -1;
+        if (query.next()) {
+            personId = query.value(0).toInt();
         }
-
-        QFile file2("requests.txt");
-        if (file2.open(QIODevice::Append | QIODevice::Text)) {
-            QTextStream out(&file2);
-            out << "Request for " << meals << " meals." << Qt::endl;
-            out << "Request from: " << details << Qt::endl;
-            file2.close();
-            QMessageBox::information(peoplewindow, "Request Submitted", "Your meal request has been submitted.");
-        } else {
-            QMessageBox::critical(peoplewindow, "File Error", "Could not open requests.txt for writing.");
+    
+        if (personId == -1) {
+            QMessageBox::warning(peoplewindow, "No Sign-up Found", "Please sign up first before requesting meals.");
+            mealNumberLine->clear();
+            mealDialog->close();
+            return;
         }
-        mealNumberLine->clear();
-        mealDialog->close();
+    
+        query.prepare("INSERT INTO meal_requests (person_id, meal_count) VALUES (:person_id, :meal_count)");
+        query.bindValue(":person_id", personId);
+        query.bindValue(":meal_count", meals.toInt());
+    
+        if (query.exec()) {
+            QMessageBox::information(peoplewindow, "Request Submitted", "Your meal request for " + meals + " meals has been submitted.");
+            mealNumberLine->clear();
+            mealDialog->close();
+        } else {
+            QMessageBox::critical(peoplewindow, "Database Error", "Could not save meal request: " + query.lastError().text());
+        }
     });
 
     QObject::connect(people, &QPushButton::clicked, [=]() { peoplewindow->show(); });
