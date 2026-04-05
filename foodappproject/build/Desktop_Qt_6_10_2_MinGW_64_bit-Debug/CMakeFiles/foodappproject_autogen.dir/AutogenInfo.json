@@ -1,19 +1,19 @@
 {
 	"AUTOGEN_COMMAND_LINE_LENGTH_MAX" : 32000,
-	"BUILD_DIR" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen",
-	"CMAKE_BINARY_DIR" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug",
-	"CMAKE_CURRENT_BINARY_DIR" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug",
-	"CMAKE_CURRENT_SOURCE_DIR" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject",
+	"BUILD_DIR" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen",
+	"CMAKE_BINARY_DIR" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug",
+	"CMAKE_CURRENT_BINARY_DIR" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug",
+	"CMAKE_CURRENT_SOURCE_DIR" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject",
 	"CMAKE_EXECUTABLE" : "C:/Qt/Tools/CMake_64/bin/cmake.exe",
 	"CMAKE_LIST_FILES" : 
 	[
-		"C:/Users/Microsoft/OneDrive/Documents/foodappproject/CMakeLists.txt",
-		"C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/.qtc/package-manager/auto-setup.cmake",
-		"C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/3.30.5/CMakeSystem.cmake",
-		"C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/.qtc/package-manager/maintenance_tool_provider.cmake",
+		"C:/Users/Microsoft/The-Co-Pilots/foodappproject/CMakeLists.txt",
+		"C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/.qtc/package-manager/auto-setup.cmake",
+		"C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/3.30.5/CMakeSystem.cmake",
+		"C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/.qtc/package-manager/maintenance_tool_provider.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeSystemSpecificInitialize.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/Platform/Windows-Initialize.cmake",
-		"C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/3.30.5/CMakeCXXCompiler.cmake",
+		"C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/3.30.5/CMakeCXXCompiler.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeSystemSpecificInformation.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeGenericSystem.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeInitializeConfigs.cmake",
@@ -26,7 +26,7 @@
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/Compiler/CMakeCommonCompilerMacros.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/Platform/Windows-GNU-CXX.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/Platform/Windows-GNU.cmake",
-		"C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/3.30.5/CMakeRCCompiler.cmake",
+		"C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/3.30.5/CMakeRCCompiler.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeRCInformation.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/Platform/Windows-windres.cmake",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/Platform/Windows-GNU-CXX-ABI.cmake",
@@ -356,22 +356,22 @@
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake",
 		"C:/Qt/6.10.2/mingw_64/lib/cmake/Qt6/Qt6Dependencies.cmake"
 	],
-	"CMAKE_SOURCE_DIR" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject",
+	"CMAKE_SOURCE_DIR" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject",
 	"CROSS_CONFIG" : false,
-	"DEP_FILE" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/deps",
+	"DEP_FILE" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/deps",
 	"DEP_FILE_RULE_NAME" : "foodappproject_autogen/timestamp",
 	"HEADERS" : 
 	[
 		[
-			"C:/Users/Microsoft/OneDrive/Documents/foodappproject/mainwindow.h",
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/mainwindow.h",
 			"MU",
 			"EWIEGA46WW/moc_mainwindow.cpp",
 			null
 		]
 	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
-	"INCLUDE_DIR" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/include",
-	"MOC_COMPILATION_FILE" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/mocs_compilation.cpp",
+	"INCLUDE_DIR" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/include",
+	"MOC_COMPILATION_FILE" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/mocs_compilation.cpp",
 	"MOC_DEFINITIONS" : 
 	[
 		"MINGW_HAS_SECURE_API=1",
@@ -428,26 +428,26 @@
 		"-c",
 		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp"
 	],
-	"MOC_PREDEFS_FILE" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/moc_predefs.h",
+	"MOC_PREDEFS_FILE" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/moc_predefs.h",
 	"MOC_RELAXED_MODE" : false,
 	"MOC_SKIP" : [],
 	"MULTI_CONFIG" : false,
 	"PARALLEL" : 10,
-	"PARSE_CACHE_FILE" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/foodappproject_autogen.dir/ParseCache.txt",
+	"PARSE_CACHE_FILE" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/foodappproject_autogen.dir/ParseCache.txt",
 	"QT_MOC_EXECUTABLE" : "C:/Qt/6.10.2/mingw_64/bin/moc.exe",
 	"QT_UIC_EXECUTABLE" : "C:/Qt/6.10.2/mingw_64/bin/uic.exe",
 	"QT_VERSION_MAJOR" : 6,
 	"QT_VERSION_MINOR" : 10,
-	"SETTINGS_FILE" : "C:/Users/Microsoft/OneDrive/Documents/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/foodappproject_autogen.dir/AutogenUsed.txt",
+	"SETTINGS_FILE" : "C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/foodappproject_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
 		[
-			"C:/Users/Microsoft/OneDrive/Documents/foodappproject/main.cpp",
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/main.cpp",
 			"MU",
 			null
 		],
 		[
-			"C:/Users/Microsoft/OneDrive/Documents/foodappproject/mainwindow.cpp",
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/mainwindow.cpp",
 			"MU",
 			null
 		]

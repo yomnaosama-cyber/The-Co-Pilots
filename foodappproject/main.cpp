@@ -55,6 +55,7 @@ bool initDatabase() {
                "age TEXT, "
                "city TEXT, "
                "vehicle TEXT)");
+    query.exec("ALTER TABLE users ADD COLUMN personal_id TEXT");
 
     query.exec("CREATE TABLE IF NOT EXISTS restaurants ("
                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -201,6 +202,8 @@ int main(int argc, char* argv[]) {
     mainlayout->addStretch();
     mainlayout->addWidget(footer);
 
+
+
     QMainWindow* delivarywindow = new QMainWindow();
     delivarywindow->setWindowTitle("Delivery");
     delivarywindow->setMinimumSize(800, 600);
@@ -276,6 +279,118 @@ int main(int argc, char* argv[]) {
     delivarylayout->addWidget(Btn2);
     delivarylayout->addWidget(Btn3);
     delivarylayout->addStretch();
+    QObject::connect(Btn1, &QPushButton::clicked, [&]() {
+        QDialog dialog(&window);
+        dialog.setWindowTitle("Delivery Sign-Up");
+        dialog.setMinimumSize(400, 550);
+        dialog.setStyleSheet(R"(
+        QDialog { background-color: #f4ece7; }
+        QLabel { color: #4b240c; font-size: 14px; font-weight: 500; margin-top: 8px; }
+        QLineEdit {
+            background-color: #ffffff;
+            color: #4b240c;
+            padding: 10px;
+            border: 2px solid #ba6c3b;
+            border-radius: 15px;
+            font-size: 13px;
+        }
+        QLineEdit:focus { border: 2px solid #813e15; background-color: #fffaf7; }
+        QLineEdit:hover { border: 2px solid #813e15; }
+        QPushButton {
+            background-color: #f4ece7;
+            border: 2px solid #813e15;
+            border-radius: 28px;
+            padding: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ba6c3b;
+            margin-top: 20px;
+        }
+        QPushButton:hover {
+            background-color: #e8cebe;
+            border-color: #4b240c;
+            color: #813e15;
+        }
+        QPushButton:pressed { background-color: #d4b89c; }
+    )");
+
+        QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
+        dialogLayout->setSpacing(12);
+        dialogLayout->setContentsMargins(30, 30, 30, 30);
+
+        // Add questions, including Personal ID
+        QStringList questions = {"Name", "National ID number", "Personal ID", "Age", "Preferred City/Town", "Vehicle type"};
+        QList<QLineEdit*> inputFields;
+
+        for (const QString &qText : questions) {
+            QLabel* label = new QLabel(qText, &dialog);
+            dialogLayout->addWidget(label);
+
+            QLineEdit* edit = new QLineEdit(&dialog);
+            edit->setPlaceholderText("Enter " + qText.toLower());
+
+            if (qText == "Age") {
+                edit->setValidator(new QIntValidator(0, 60, edit));
+                edit->setPlaceholderText("Enter age (0-60)");
+            }
+
+            dialogLayout->addWidget(edit);
+            inputFields.append(edit);
+        }
+
+        QPushButton* submitBtn = new QPushButton("Submit Registration", &dialog);
+        submitBtn->setCursor(Qt::PointingHandCursor);
+        dialogLayout->addWidget(submitBtn);
+
+        QObject::connect(submitBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+        if (dialog.exec() == QDialog::Accepted) {
+            // Validate inputs
+            bool allFilled = true;
+            for (QLineEdit* field : inputFields) {
+                if (field->text().trimmed().isEmpty()) {
+                    allFilled = false;
+                    field->setStyleSheet("border: 2px solid #ff6b6b; background-color: #fff0f0;");
+                } else {
+                    field->setStyleSheet("");
+                }
+            }
+
+            if (!allFilled) {
+                QMessageBox::warning(&window, "Validation Error", "Please fill all fields!");
+                return;
+            }
+
+            // Validate age
+            bool ageOk;
+            int age = inputFields[3]->text().toInt(&ageOk);
+            if (!ageOk || age < 0 || age > 60) {
+                QMessageBox::warning(&window, "Validation Error", "Please enter a valid age (0-150)!");
+                return;
+            }
+
+            QSqlQuery query;
+            query.prepare("INSERT INTO users (name, national_id, personal_id, age, city, vehicle) "
+                          "VALUES (:name, :national_id, :personal_id, :age, :city, :vehicle)");
+
+            query.bindValue(":name", inputFields[0]->text().trimmed());
+            query.bindValue(":national_id", inputFields[1]->text().trimmed());
+            query.bindValue(":personal_id", inputFields[2]->text().trimmed());
+            query.bindValue(":age", QString::number(age));
+            query.bindValue(":city", inputFields[4]->text().trimmed());
+            query.bindValue(":vehicle", inputFields[5]->text().trimmed());
+
+            if (query.exec()) {
+                QMessageBox::information(&window, "Success!",
+                                         QString("✓ Delivery Person Registered Successfully!\n\nName: %1\nPersonal ID: %2")
+                                             .arg(inputFields[0]->text())
+                                             .arg(inputFields[2]->text()));
+            } else {
+                QMessageBox::critical(&window, "Database Error",
+                                      "Error: " + query.lastError().text());
+            }
+        }
+    });
 
     QMainWindow* peoplewindow = new QMainWindow();
     peoplewindow->setWindowTitle("People in Need");
@@ -532,9 +647,7 @@ int main(int argc, char* argv[]) {
         }
     });
 
-    QObject::connect(people, &QPushButton::clicked, [=]() {
-        peoplewindow->show();
-    });
+
 
     QObject::connect(organizations, &QPushButton::clicked, [&]() {
         QDialog dialog(&window);
@@ -771,46 +884,9 @@ int main(int argc, char* argv[]) {
         dialog.exec();
     });
 
-    QObject::connect(Btn1, &QPushButton::clicked, [&]() {
-        QDialog dialog(&window);
-        dialog.setWindowTitle("User Questions");
-        dialog.setMinimumSize(300, 400);
-        dialog.setStyleSheet("QDialog { background-color: #1a1a2e; } QLabel { color: white; } QLineEdit { padding: 5px; border-radius: 3px; }");
-
-        QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
-        QStringList questions = {"Name", "National ID number", "Age", "Preferred City/Town", "Vehicle type"};
-        QList<QLineEdit*> inputFields;
-
-        for (const QString &qText : questions) {
-            dialogLayout->addWidget(new QLabel(qText, &dialog));
-            QLineEdit* edit = new QLineEdit(&dialog);
-            dialogLayout->addWidget(edit);
-            inputFields.append(edit);
-        }
-
-        QPushButton* submitBtn = new QPushButton("Submit", &dialog);
-        submitBtn->setStyleSheet("background-color: #4facfe; color: white; padding: 8px; border-radius: 5px;");
-        dialogLayout->addWidget(submitBtn);
-
-        QObject::connect(submitBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
-
-        if (dialog.exec() == QDialog::Accepted) {
-            QSqlQuery query;
-            query.prepare("INSERT INTO users (name, national_id, age, city, vehicle) VALUES (:name, :nid, :age, :city, :vehicle)");
-            query.bindValue(":name", inputFields[0]->text());
-            query.bindValue(":nid", inputFields[1]->text());
-            query.bindValue(":age", inputFields[2]->text());
-            query.bindValue(":city", inputFields[3]->text());
-            query.bindValue(":vehicle", inputFields[4]->text());
-
-            if (query.exec()) {
-                QMessageBox::information(&window, "Success", "Data Saved to Database!");
-            } else {
-                QMessageBox::critical(&window, "Error", "Database Error: " + query.lastError().text());
-            }
-        }
+    QObject::connect(people, &QPushButton::clicked, [=]() {
+        peoplewindow->show();
     });
-
     QObject::connect(delivery, &QPushButton::clicked, [=]() {
         delivarywindow->show();
         delivarywindow->raise();
