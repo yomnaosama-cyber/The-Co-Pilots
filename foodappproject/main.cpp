@@ -5,24 +5,21 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
-#include <QPainter>
-#include <QPropertyAnimation>
-#include <QMouseEvent>
 #include <QLabel>
 #include <QMessageBox>
-#include <QFile>
-#include <QTextStream>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
-#include <QSqlRecord>
 #include <QDialog>
 #include <QVariant>
 #include <QComboBox>
 #include <QFormLayout>
 #include <QStackedWidget>
 #include <QTextEdit>
-#include <QDebug>
+#include <QStringList>
+#include <QList>
+#include <QFont>
+#include <Qt>
 
 bool initDatabase() {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
@@ -34,6 +31,7 @@ bool initDatabase() {
     }
 
     QSqlQuery query;
+
     query.exec("CREATE TABLE IF NOT EXISTS people_sign ("
                "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                "name TEXT NOT NULL,"
@@ -58,21 +56,38 @@ bool initDatabase() {
                "city TEXT, "
                "vehicle TEXT)");
 
-    query.exec("CREATE TABLE IF NOT EXISTS providers ("
+    query.exec("CREATE TABLE IF NOT EXISTS restaurants ("
                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-               "role TEXT, "
-               "name TEXT, "
-               "location TEXT, "
-               "food_type TEXT, "
-               "contact_info TEXT, "
-               "organization_type TEXT, "
-               "purpose TEXT)");
+               "name TEXT NOT NULL, "
+               "location TEXT NOT NULL, "
+               "food_type TEXT NOT NULL, "
+               "contact_info TEXT NOT NULL, "
+               "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+
+    query.exec("CREATE TABLE IF NOT EXISTS organizations ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+               "name TEXT NOT NULL, "
+               "organization_type TEXT NOT NULL, "
+               "location TEXT NOT NULL, "
+               "purpose TEXT NOT NULL, "
+               "contact_info TEXT NOT NULL, "
+               "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+
+    query.exec("CREATE TABLE IF NOT EXISTS food_donations ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+               "provider_name TEXT NOT NULL, "
+               "provider_role TEXT NOT NULL, "
+               "food_amount TEXT NOT NULL, "
+               "food_type TEXT NOT NULL, "
+               "donation_location TEXT NOT NULL, "
+               "delivery_method TEXT NOT NULL, "
+               "donation_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
 
     return true;
 }
 
 int main(int argc, char* argv[]) {
-    QApplication app (argc, argv);
+    QApplication app(argc, argv);
 
     if (!initDatabase()) {
         return -1;
@@ -90,15 +105,15 @@ int main(int argc, char* argv[]) {
     mainlayout->setSpacing(40);
 
     QHBoxLayout* btnlayout = new QHBoxLayout();
-    mainlayout->setSpacing(100);
     btnlayout->setAlignment(Qt::AlignCenter);
+    btnlayout->setSpacing(30);
 
     QWidget* headerWidget = new QWidget();
     headerWidget->setStyleSheet(
         "QWidget {"
         "   background-color: #813e15;"
         "}"
-        );
+    );
     headerWidget->setFixedHeight(140);
 
     QVBoxLayout* headerLayout = new QVBoxLayout(headerWidget);
@@ -126,9 +141,8 @@ int main(int argc, char* argv[]) {
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
+    );
 
     QPushButton* organizations = new QPushButton("\nOrganizations\n and \n restaurants\nShare your surplus \n food with the\n community and \nminimize your\n environmental impact.");
     organizations->setFixedSize(250, 300);
@@ -147,11 +161,8 @@ int main(int argc, char* argv[]) {
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
-
-
+    );
 
     QPushButton* people = new QPushButton("\n\nPeople in Need\n\n\n\nRequest meals and \nassistance if you \nneed help");
     people->setFixedSize(250, 300);
@@ -170,9 +181,8 @@ int main(int argc, char* argv[]) {
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
+    );
 
     QLabel* footer = new QLabel("Ready to start? Select an option to connect food with community");
     footer->setFont(QFont("Arial", 18));
@@ -200,23 +210,18 @@ int main(int argc, char* argv[]) {
     delivarywindow->setCentralWidget(delivarycentral);
 
     QVBoxLayout* delivarylayout = new QVBoxLayout(delivarycentral);
-    delivarylayout->setAlignment(Qt::AlignHCenter); // horizontal center
-    delivarylayout->setSpacing(40);               // spacing between widgets
+    delivarylayout->setAlignment(Qt::AlignHCenter);
+    delivarylayout->setSpacing(40);
 
-    // Header
     QLabel* delivaryheader = new QLabel("Delivery System");
     delivaryheader->setFont(QFont("Arial", 40, QFont::Bold));
     delivaryheader->setAlignment(Qt::AlignCenter);
     delivaryheader->setStyleSheet("color: #813e15; background-color: transparent; padding: 20px;");
 
-    // Buttons
     QPushButton* Btn1 = new QPushButton("Sign up");
     QPushButton* Btn2 = new QPushButton("Delivery notifications");
     QPushButton* Btn3 = new QPushButton("Pickup");
 
-    Btn1->setObjectName("btn1");
-    Btn2->setObjectName("btn2");
-    Btn3->setObjectName("btn3");
     Btn1->setStyleSheet(
         "QPushButton {"
         "   background-color: #f4ece7;"
@@ -226,14 +231,13 @@ int main(int argc, char* argv[]) {
         "   font-size: 18px;"
         "   font-weight: bold;"
         "   color: #ba6c3b;"
-        "   text-align: center;"
         "}"
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
+    );
+
     Btn2->setStyleSheet(
         "QPushButton {"
         "   background-color: #f4ece7;"
@@ -243,14 +247,13 @@ int main(int argc, char* argv[]) {
         "   font-size: 18px;"
         "   font-weight: bold;"
         "   color: #ba6c3b;"
-        "   text-align: center;"
         "}"
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
+    );
+
     Btn3->setStyleSheet(
         "QPushButton {"
         "   background-color: #f4ece7;"
@@ -260,22 +263,19 @@ int main(int argc, char* argv[]) {
         "   font-size: 18px;"
         "   font-weight: bold;"
         "   color: #ba6c3b;"
-        "   text-align: center;"
         "}"
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
-    // Add vertical centering using stretch
-    delivarylayout->addStretch();           // top space
+    );
+
+    delivarylayout->addStretch();
     delivarylayout->addWidget(delivaryheader);
     delivarylayout->addWidget(Btn1);
     delivarylayout->addWidget(Btn2);
     delivarylayout->addWidget(Btn3);
-    delivarylayout->addStretch();           // bottom space
-
+    delivarylayout->addStretch();
 
     QMainWindow* peoplewindow = new QMainWindow();
     peoplewindow->setWindowTitle("People in Need");
@@ -310,9 +310,8 @@ int main(int argc, char* argv[]) {
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
+    );
 
     QPushButton* peoplerequest = new QPushButton("Request Meals");
     peoplerequest->setFixedSize(500, 200);
@@ -330,9 +329,8 @@ int main(int argc, char* argv[]) {
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
+    );
 
     peoplelayout->addWidget(peopleheader);
     peoplelayout->addStretch();
@@ -340,8 +338,6 @@ int main(int argc, char* argv[]) {
     peoplelayout->addStretch();
     peoplelayout->addWidget(peoplerequest, 0, Qt::AlignCenter);
     peoplelayout->addStretch();
-
-
 
     QMainWindow* signwindow = new QMainWindow();
     signwindow->setWindowTitle("Sign Up for Assistance");
@@ -401,9 +397,8 @@ int main(int argc, char* argv[]) {
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
-        "   transform: translateY(-5px);"
         "}"
-        );
+    );
 
     signlayout->addWidget(signname);
     signlayout->addWidget(peoplename);
@@ -452,13 +447,15 @@ int main(int argc, char* argv[]) {
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
         "}"
-        );
+    );
 
     dialogLayout->addWidget(mealLabel);
     dialogLayout->addWidget(mealNumberLine);
     dialogLayout->addWidget(submitMealRequest);
 
-    QObject::connect(peoplesign, &QPushButton::clicked, [=]() { signwindow->show(); });
+    QObject::connect(peoplesign, &QPushButton::clicked, [=]() {
+        signwindow->show();
+    });
 
     QObject::connect(peoplesubmit, &QPushButton::clicked, [=]() {
         QString name = peoplename->text();
@@ -494,10 +491,13 @@ int main(int argc, char* argv[]) {
         }
     });
 
-    QObject::connect(peoplerequest, &QPushButton::clicked, [=]() { mealDialog->exec(); });
+    QObject::connect(peoplerequest, &QPushButton::clicked, [=]() {
+        mealDialog->exec();
+    });
 
     QObject::connect(submitMealRequest, &QPushButton::clicked, [=]() {
         QString meals = mealNumberLine->text();
+
         if (meals.isEmpty() || meals.toInt() <= 0) {
             QMessageBox::warning(peoplewindow, "Input Error", "Please enter the number of meals you need.");
             return;
@@ -517,7 +517,8 @@ int main(int argc, char* argv[]) {
             mealDialog->close();
             return;
         }
-query.finish();
+
+        query.finish();
         query.prepare("INSERT INTO meal_requests (person_id, meal_count) VALUES (:person_id, :meal_count)");
         query.bindValue(":person_id", personId);
         query.bindValue(":meal_count", meals.toInt());
@@ -531,56 +532,54 @@ query.finish();
         }
     });
 
-    QObject::connect(people, &QPushButton::clicked, [=]() { peoplewindow->show(); });
-
+    QObject::connect(people, &QPushButton::clicked, [=]() {
+        peoplewindow->show();
+    });
 
     QObject::connect(organizations, &QPushButton::clicked, [&]() {
-        QDialog dialog(&window);  // Use the main window as parent
+        QDialog dialog(&window);
         dialog.setWindowTitle("Provider Registration");
-        dialog.setMinimumSize(520, 560);
+        dialog.setMinimumSize(560, 620);
 
-dialog.setStyleSheet(
-    "QDialog { background-color: #efe4d0; }"
-
-    "QLabel { color: #813e15; font-size: 14px; }"
-
-    "QLineEdit, QTextEdit, QComboBox {"
-    " background-color: white;"
-    " color: black;"
-    " border: 2px solid #813e15;"
-    " border-radius: 10px;"
-    " padding: 6px;"
-    "}"
-
-    "QPushButton {"
-    " background-color: #813e15;"
-    " color: white;"
-    " border-radius: 12px;"
-    " padding: 10px;"
-    " font-weight: bold;"
-    "}"
-);
+        dialog.setStyleSheet(
+            "QDialog { background-color: #efe4d0; }"
+            "QLabel { color: #813e15; font-size: 14px; }"
+            "QLineEdit, QTextEdit, QComboBox {"
+            " background-color: white;"
+            " color: black;"
+            " border: 2px solid #813e15;"
+            " border-radius: 10px;"
+            " padding: 6px;"
+            "}"
+            "QPushButton {"
+            " background-color: #813e15;"
+            " color: white;"
+            " border-radius: 12px;"
+            " padding: 10px;"
+            " font-weight: bold;"
+            "}"
+        );
 
         QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
 
         QLabel *title = new QLabel("Community Food Connect", &dialog);
         title->setAlignment(Qt::AlignCenter);
-        title->setStyleSheet("font-size: 24px; font-weight: 700; color: white;");
+        title->setStyleSheet("font-size: 24px; font-weight: 700; color: #813e15;");
         mainLayout->addWidget(title);
 
-        // Switch buttons
         QHBoxLayout *switchLayout = new QHBoxLayout();
         QPushButton *restaurantButton = new QPushButton("Restaurant", &dialog);
         QPushButton *organizationButton = new QPushButton("Organization", &dialog);
+        QPushButton *donateButton = new QPushButton("Donate Food Details", &dialog);
+
         switchLayout->addWidget(restaurantButton);
         switchLayout->addWidget(organizationButton);
+        switchLayout->addWidget(donateButton);
         mainLayout->addLayout(switchLayout);
 
-        // Stacked widget
         QStackedWidget *stack = new QStackedWidget(&dialog);
         mainLayout->addWidget(stack);
 
-        // --- Restaurant Page ---
         QWidget *restaurantPage = new QWidget();
         QVBoxLayout *restaurantPageLayout = new QVBoxLayout(restaurantPage);
         QFormLayout *restaurantForm = new QFormLayout();
@@ -589,6 +588,7 @@ dialog.setStyleSheet(
         QLineEdit *resLocation = new QLineEdit();
         QComboBox *resFoodType = new QComboBox();
         QLineEdit *resContact = new QLineEdit();
+
         resFoodType->addItems({"Bakery", "Fast Food", "Groceries", "Home Meals", "Restaurant Meals", "Vegetarian", "Other"});
 
         restaurantForm->addRow("Restaurant Name:", resName);
@@ -601,7 +601,6 @@ dialog.setStyleSheet(
         restaurantPageLayout->addWidget(restaurantSubmit);
         stack->addWidget(restaurantPage);
 
-        // --- Organization Page ---
         QWidget *organizationPage = new QWidget();
         QVBoxLayout *organizationPageLayout = new QVBoxLayout(organizationPage);
         QFormLayout *organizationForm = new QFormLayout();
@@ -611,6 +610,7 @@ dialog.setStyleSheet(
         QLineEdit *orgLocation = new QLineEdit();
         QTextEdit *orgPurpose = new QTextEdit();
         QLineEdit *orgContact = new QLineEdit();
+
         orgType->addItems({"Charity", "Community Kitchen", "Food Bank", "Mosque", "NGO", "Shelter", "Other"});
 
         organizationForm->addRow("Organization Name:", orgName);
@@ -624,83 +624,198 @@ dialog.setStyleSheet(
         organizationPageLayout->addWidget(organizationSubmit);
         stack->addWidget(organizationPage);
 
-        // Switch pages
-        QObject::connect(restaurantButton, &QPushButton::clicked, [=]() { stack->setCurrentIndex(0); });
-        QObject::connect(organizationButton, &QPushButton::clicked, [=]() { stack->setCurrentIndex(1); });
+        QWidget *donatePage = new QWidget();
+        QVBoxLayout *donatePageLayout = new QVBoxLayout(donatePage);
+        QFormLayout *donateForm = new QFormLayout();
 
-        // Submissions
+        QLineEdit *providerName = new QLineEdit();
+        QComboBox *providerRole = new QComboBox();
+        QLineEdit *foodAmount = new QLineEdit();
+        QLineEdit *donationType = new QLineEdit();
+        QLineEdit *donationLocation = new QLineEdit();
+        QComboBox *deliveryMethod = new QComboBox();
+
+        providerRole->addItems({"Restaurant", "Organization"});
+        deliveryMethod->addItems({"Pickup", "Delivery", "Either"});
+
+        donateForm->addRow("Provider Name:", providerName);
+        donateForm->addRow("Provider Type:", providerRole);
+        donateForm->addRow("Amount of Food:", foodAmount);
+        donateForm->addRow("Food Type:", donationType);
+        donateForm->addRow("Donation Location:", donationLocation);
+        donateForm->addRow("Delivery Method:", deliveryMethod);
+
+        QPushButton *donateSubmit = new QPushButton("Submit Donation Details");
+        donatePageLayout->addLayout(donateForm);
+        donatePageLayout->addWidget(donateSubmit);
+        stack->addWidget(donatePage);
+
+        QObject::connect(restaurantButton, &QPushButton::clicked, [=]() {
+            stack->setCurrentIndex(0);
+        });
+
+        QObject::connect(organizationButton, &QPushButton::clicked, [=]() {
+            stack->setCurrentIndex(1);
+        });
+
+        QObject::connect(donateButton, &QPushButton::clicked, [=]() {
+            stack->setCurrentIndex(2);
+        });
+
         QObject::connect(restaurantSubmit, &QPushButton::clicked, [&]() {
-            if(resName->text().trimmed().isEmpty() ||
+            if (resName->text().trimmed().isEmpty() ||
                 resLocation->text().trimmed().isEmpty() ||
                 resContact->text().trimmed().isEmpty()) {
                 QMessageBox::warning(&dialog, "Missing Information", "Please fill in all restaurant fields.");
                 return;
             }
-            QMessageBox::information(&dialog, "Success", "Restaurant registered successfully.");
-            dialog.accept();
+
+            QSqlQuery query;
+            query.prepare("INSERT INTO restaurants (name, location, food_type, contact_info) "
+                          "VALUES (:name, :location, :food_type, :contact_info)");
+            query.bindValue(":name", resName->text().trimmed());
+            query.bindValue(":location", resLocation->text().trimmed());
+            query.bindValue(":food_type", resFoodType->currentText());
+            query.bindValue(":contact_info", resContact->text().trimmed());
+
+            if (query.exec()) {
+                QMessageBox::information(&dialog, "Success", "Restaurant registered successfully.");
+                resName->clear();
+                resLocation->clear();
+                resContact->clear();
+            } else {
+                QMessageBox::critical(&dialog, "Database Error", query.lastError().text());
+            }
         });
 
         QObject::connect(organizationSubmit, &QPushButton::clicked, [&]() {
-            if(orgName->text().trimmed().isEmpty() ||
+            if (orgName->text().trimmed().isEmpty() ||
                 orgLocation->text().trimmed().isEmpty() ||
                 orgPurpose->toPlainText().trimmed().isEmpty() ||
                 orgContact->text().trimmed().isEmpty()) {
                 QMessageBox::warning(&dialog, "Missing Information", "Please fill in all organization fields.");
                 return;
             }
-            QMessageBox::information(&dialog, "Success", "Organization registered successfully.");
-            dialog.accept();
+
+            QSqlQuery query;
+            query.prepare("INSERT INTO organizations (name, organization_type, location, purpose, contact_info) "
+                          "VALUES (:name, :organization_type, :location, :purpose, :contact_info)");
+            query.bindValue(":name", orgName->text().trimmed());
+            query.bindValue(":organization_type", orgType->currentText());
+            query.bindValue(":location", orgLocation->text().trimmed());
+            query.bindValue(":purpose", orgPurpose->toPlainText().trimmed());
+            query.bindValue(":contact_info", orgContact->text().trimmed());
+
+            if (query.exec()) {
+                QMessageBox::information(&dialog, "Success", "Organization registered successfully.");
+                orgName->clear();
+                orgLocation->clear();
+                orgPurpose->clear();
+                orgContact->clear();
+            } else {
+                QMessageBox::critical(&dialog, "Database Error", query.lastError().text());
+            }
+        });
+
+        QObject::connect(donateSubmit, &QPushButton::clicked, [&]() {
+            if (providerName->text().trimmed().isEmpty() ||
+                foodAmount->text().trimmed().isEmpty() ||
+                donationType->text().trimmed().isEmpty() ||
+                donationLocation->text().trimmed().isEmpty()) {
+                QMessageBox::warning(&dialog, "Missing Information", "Please fill in all donation fields.");
+                return;
+            }
+
+            bool registered = false;
+            QSqlQuery checkQuery;
+
+            if (providerRole->currentText() == "Restaurant") {
+                checkQuery.prepare("SELECT id FROM restaurants WHERE name = :name LIMIT 1");
+            } else {
+                checkQuery.prepare("SELECT id FROM organizations WHERE name = :name LIMIT 1");
+            }
+
+            checkQuery.bindValue(":name", providerName->text().trimmed());
+
+            if (checkQuery.exec() && checkQuery.next()) {
+                registered = true;
+            }
+
+            if (!registered) {
+                QMessageBox::warning(&dialog, "Not Registered", "This provider is not registered yet. Please sign up first.");
+                return;
+            }
+
+            QSqlQuery query;
+            query.prepare("INSERT INTO food_donations "
+                          "(provider_name, provider_role, food_amount, food_type, donation_location, delivery_method) "
+                          "VALUES (:provider_name, :provider_role, :food_amount, :food_type, :donation_location, :delivery_method)");
+            query.bindValue(":provider_name", providerName->text().trimmed());
+            query.bindValue(":provider_role", providerRole->currentText());
+            query.bindValue(":food_amount", foodAmount->text().trimmed());
+            query.bindValue(":food_type", donationType->text().trimmed());
+            query.bindValue(":donation_location", donationLocation->text().trimmed());
+            query.bindValue(":delivery_method", deliveryMethod->currentText());
+
+            if (query.exec()) {
+                QMessageBox::information(&dialog, "Success", "Donation details submitted successfully.");
+                providerName->clear();
+                foodAmount->clear();
+                donationType->clear();
+                donationLocation->clear();
+            } else {
+                QMessageBox::critical(&dialog, "Database Error", query.lastError().text());
+            }
         });
 
         dialog.exec();
     });
-QObject::connect(Btn1, &QPushButton::clicked, [&]() {
-    QDialog dialog(&window);  // Correct parent
-    dialog.setWindowTitle("User Questions");
-    dialog.setMinimumSize(300, 400);
-    dialog.setStyleSheet("QDialog { background-color: #1a1a2e; } QLabel { color: white; } QLineEdit { padding: 5px; border-radius: 3px; }");
 
-    QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
-    QStringList questions = {"Name", "National ID number", "Age", "Preferred City/Town", "Vehicle type"};
-    QList<QLineEdit*> inputFields;
+    QObject::connect(Btn1, &QPushButton::clicked, [&]() {
+        QDialog dialog(&window);
+        dialog.setWindowTitle("User Questions");
+        dialog.setMinimumSize(300, 400);
+        dialog.setStyleSheet("QDialog { background-color: #1a1a2e; } QLabel { color: white; } QLineEdit { padding: 5px; border-radius: 3px; }");
 
-    for (const QString &qText : questions) {
-        dialogLayout->addWidget(new QLabel(qText, &dialog));
-        QLineEdit* edit = new QLineEdit(&dialog);
-        dialogLayout->addWidget(edit);
-        inputFields.append(edit);
-    }
+        QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
+        QStringList questions = {"Name", "National ID number", "Age", "Preferred City/Town", "Vehicle type"};
+        QList<QLineEdit*> inputFields;
 
-    QPushButton* submitBtn = new QPushButton("Submit", &dialog);
-    submitBtn->setStyleSheet("background-color: #4facfe; color: white; padding: 8px; border-radius: 5px;");
-    dialogLayout->addWidget(submitBtn);
-
-    QObject::connect(submitBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
-
-    if (dialog.exec() == QDialog::Accepted) {
-        QSqlQuery query;
-        query.prepare("INSERT INTO users (name, national_id, age, city, vehicle) VALUES (:name, :nid, :age, :city, :vehicle)");
-        query.bindValue(":name", inputFields[0]->text());
-        query.bindValue(":nid", inputFields[1]->text());
-        query.bindValue(":age", inputFields[2]->text());
-        query.bindValue(":city", inputFields[3]->text());
-        query.bindValue(":vehicle", inputFields[4]->text());
-
-        if (query.exec()) {
-            QMessageBox::information(&window, "Success", "Data Saved to Database!");
-        } else {
-            QMessageBox::critical(&window, "Error", "Database Error: " + query.lastError().text());
+        for (const QString &qText : questions) {
+            dialogLayout->addWidget(new QLabel(qText, &dialog));
+            QLineEdit* edit = new QLineEdit(&dialog);
+            dialogLayout->addWidget(edit);
+            inputFields.append(edit);
         }
-    }
-});
 
-    QObject::connect(delivery, &QPushButton::clicked, [=]() {
-        delivarywindow->show();  // show the delivery window
-        delivarywindow->raise(); // bring it to front if already open
-        delivarywindow->activateWindow(); // focus on it
+        QPushButton* submitBtn = new QPushButton("Submit", &dialog);
+        submitBtn->setStyleSheet("background-color: #4facfe; color: white; padding: 8px; border-radius: 5px;");
+        dialogLayout->addWidget(submitBtn);
+
+        QObject::connect(submitBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+        if (dialog.exec() == QDialog::Accepted) {
+            QSqlQuery query;
+            query.prepare("INSERT INTO users (name, national_id, age, city, vehicle) VALUES (:name, :nid, :age, :city, :vehicle)");
+            query.bindValue(":name", inputFields[0]->text());
+            query.bindValue(":nid", inputFields[1]->text());
+            query.bindValue(":age", inputFields[2]->text());
+            query.bindValue(":city", inputFields[3]->text());
+            query.bindValue(":vehicle", inputFields[4]->text());
+
+            if (query.exec()) {
+                QMessageBox::information(&window, "Success", "Data Saved to Database!");
+            } else {
+                QMessageBox::critical(&window, "Error", "Database Error: " + query.lastError().text());
+            }
+        }
     });
 
-
+    QObject::connect(delivery, &QPushButton::clicked, [=]() {
+        delivarywindow->show();
+        delivarywindow->raise();
+        delivarywindow->activateWindow();
+    });
 
     window.show();
     return app.exec();
