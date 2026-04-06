@@ -36,7 +36,6 @@ bool initDatabase() {
                "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                "name TEXT NOT NULL,"
                "people_id TEXT NOT NULL,"
-               "address TEXT NOT NULL,"
                "contact TEXT NOT NULL,"
                "notes TEXT,"
                "signup_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
