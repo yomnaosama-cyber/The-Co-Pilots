@@ -45,6 +45,7 @@ bool initDatabase() {
                "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                "person_id INTEGER,"
                "meal_count INTEGER NOT NULL,"
+               "address TEXT NOT NULL,"
                "request_date DATETIME DEFAULT CURRENT_TIMESTAMP,"
                "FOREIGN KEY(person_id) REFERENCES people_sign(id))");
 
@@ -83,6 +84,16 @@ bool initDatabase() {
                "donation_location TEXT NOT NULL, "
                "delivery_method TEXT NOT NULL, "
                "donation_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
+
+    query.exec("CREATE TABLE IF NOT EXISTS all_addresses ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+               "source_type TEXT NOT NULL," 
+               "source_id INTEGER NOT NULL,"
+               "person_name TEXT,"  
+               "provider_name TEXT,"  
+               "address TEXT NOT NULL,"
+               "details TEXT,"
+               "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
 
     return true;
 }
@@ -478,12 +489,6 @@ int main(int argc, char* argv[]) {
     peopleid->setPlaceholderText("Your ID");
     peopleid->setStyleSheet("font-size: 18px;");
 
-    QLabel* signaddress = new QLabel("Enter Your Address:");
-    signaddress->setFont(QFont("Arial", 18, QFont::Bold));
-    QLineEdit* peopleaddress = new QLineEdit();
-    peopleaddress->setPlaceholderText("Your Address");
-    peopleaddress->setStyleSheet("font-size: 18px;");
-
     QLabel* signcontact = new QLabel("Enter Your Contact Info:");
     signcontact->setFont(QFont("Arial", 18, QFont::Bold));
     QLineEdit* peoplecontact = new QLineEdit();
@@ -519,8 +524,6 @@ int main(int argc, char* argv[]) {
     signlayout->addWidget(peoplename);
     signlayout->addWidget(signid);
     signlayout->addWidget(peopleid);
-    signlayout->addWidget(signaddress);
-    signlayout->addWidget(peopleaddress);
     signlayout->addWidget(signcontact);
     signlayout->addWidget(peoplecontact);
     signlayout->addWidget(signnote);
@@ -538,12 +541,21 @@ int main(int argc, char* argv[]) {
     mealLabel->setFont(QFont("Arial", 18, QFont::Bold));
     mealLabel->setAlignment(Qt::AlignCenter);
     mealLabel->setStyleSheet("color: #813e15;");
-
     QLineEdit* mealNumberLine = new QLineEdit();
     mealNumberLine->setPlaceholderText("Enter number of meals in numerals");
     mealNumberLine->setMinimumHeight(60);
     mealNumberLine->setAlignment(Qt::AlignCenter);
     mealNumberLine->setStyleSheet("font-size: 18px;");
+
+    QLabel* signaddress = new QLabel("Enter Your Address:");
+    signaddress->setFont(QFont("Arial", 18, QFont::Bold));
+    signaddress->setAlignment(Qt::AlignCenter);
+    signaddress->setStyleSheet("color: #813e15;");
+    QLineEdit* peopleaddress = new QLineEdit();
+    peopleaddress->setPlaceholderText("Your Address");
+    peopleaddress->setMinimumHeight(60);
+    peopleaddress->setAlignment(Qt::AlignCenter);
+    peopleaddress->setStyleSheet("font-size: 18px;");
 
     QPushButton* submitMealRequest = new QPushButton("Submit");
     submitMealRequest->setFixedSize(150, 50);
@@ -566,6 +578,8 @@ int main(int argc, char* argv[]) {
 
     dialogLayout->addWidget(mealLabel);
     dialogLayout->addWidget(mealNumberLine);
+    dialogLayout->addWidget(signaddress);
+    dialogLayout->addWidget(peopleaddress);
     dialogLayout->addWidget(submitMealRequest);
 
     QObject::connect(peoplesign, &QPushButton::clicked, [=]() {
@@ -575,11 +589,10 @@ int main(int argc, char* argv[]) {
     QObject::connect(peoplesubmit, &QPushButton::clicked, [=]() {
         QString name = peoplename->text();
         QString id = peopleid->text();
-        QString address = peopleaddress->text();
         QString contact = peoplecontact->text();
         QString note = peoplenote->text();
 
-        if (name.isEmpty() || id.isEmpty() || address.isEmpty() || contact.isEmpty()) {
+        if (name.isEmpty() || id.isEmpty() || contact.isEmpty()) {
             QMessageBox::warning(signwindow, "Input Error", "Please fill in all required fields.");
             return;
         }
@@ -589,15 +602,13 @@ int main(int argc, char* argv[]) {
                       "VALUES (:name, :id, :address, :contact, :notes)");
         query.bindValue(":name", name);
         query.bindValue(":id", id);
-        query.bindValue(":address", address);
         query.bindValue(":contact", contact);
         query.bindValue(":notes", note);
-
+        
         if (query.exec()) {
             QMessageBox::information(signwindow, "Request Submitted", "Your sign-up information has been submitted.");
             peoplename->clear();
             peopleid->clear();
-            peopleaddress->clear();
             peoplecontact->clear();
             peoplenote->clear();
             signwindow->close();
@@ -612,8 +623,9 @@ int main(int argc, char* argv[]) {
 
     QObject::connect(submitMealRequest, &QPushButton::clicked, [=]() {
         QString meals = mealNumberLine->text();
+        QString address = peopleaddress->text();
 
-        if (meals.isEmpty() || meals.toInt() <= 0) {
+        if (meals.isEmpty() || address.isEmpty() || meals.toInt() <= 0) {
             QMessageBox::warning(peoplewindow, "Input Error", "Please enter the number of meals you need.");
             return;
         }
@@ -634,13 +646,31 @@ int main(int argc, char* argv[]) {
         }
 
         query.finish();
-        query.prepare("INSERT INTO meal_requests (person_id, meal_count) VALUES (:person_id, :meal_count)");
+        query.prepare("INSERT INTO meal_requests (person_id, meal_count, address) VALUES (:person_id, :meal_count, :address)");
         query.bindValue(":person_id", personId);
         query.bindValue(":meal_count", meals.toInt());
+        query.bindValue(":address", address);
 
         if (query.exec()) {
+            QSqlQuery nameQuery;
+            nameQuery.prepare("SELECT name FROM people_sign WHERE id = :person_id");
+            nameQuery.bindValue(":person_id", personId);
+            QString personName = "Unknown";
+            if (nameQuery.exec() && nameQuery.next()) {
+                personName = nameQuery.value(0).toString();
+            }
+            QSqlQuery addrQuery;
+            addrQuery.prepare("INSERT INTO all_addresses (source_type, source_id, person_name, address, details) "
+                              "VALUES ('meal_request', :source_id, :person_name, :address, :details)");
+            addrQuery.bindValue(":source_id", personId);
+            addrQuery.bindValue(":person_name", personName);
+            addrQuery.bindValue(":address", address);
+            addrQuery.bindValue(":details", QString("%1 meals requested").arg(meals));
+            addrQuery.exec();
+
             QMessageBox::information(peoplewindow, "Request Submitted", "Your meal request for " + meals + " meals has been submitted.");
             mealNumberLine->clear();
+            peopleaddress->clear();
             mealDialog->close();
         } else {
             QMessageBox::critical(peoplewindow, "Database Error", "Could not save meal request: " + query.lastError().text());
@@ -871,6 +901,18 @@ int main(int argc, char* argv[]) {
             query.bindValue(":delivery_method", deliveryMethod->currentText());
 
             if (query.exec()) {
+                QSqlQuery addrQuery;
+                addrQuery.prepare("INSERT INTO all_addresses (source_type, source_id, provider_name, address, details) "
+                                  "VALUES ('donation', :source_id, :provider_name, :address, :details)");
+                addrQuery.bindValue(":source_id", query.lastInsertId().toInt()); // Get the donation ID
+                addrQuery.bindValue(":provider_name", providerName->text().trimmed());
+                addrQuery.bindValue(":address", donationLocation->text().trimmed());
+                addrQuery.bindValue(":details", QString("%1 of %2 - Delivery: %3")
+                                    .arg(foodAmount->text().trimmed())
+                                    .arg(donationType->text().trimmed())
+                                    .arg(deliveryMethod->currentText()));
+                addrQuery.exec();
+
                 QMessageBox::information(&dialog, "Success", "Donation details submitted successfully.");
                 providerName->clear();
                 foodAmount->clear();
