@@ -18,6 +18,14 @@ set(PROJECT_SOURCES
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
+    database.cpp
+    database.h
+    delivery.cpp
+    delivery.h
+    people.cpp
+    people.h
+    org.cpp
+    org.h
 )
 
 # 3. Create the app (Simplified)
