@@ -3,11 +3,9 @@
 
 #include <QMainWindow>
 
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
-QT_END_NAMESPACE
+class DeliveryModule;
+class PeopleModule;
+class OrgModule;
 
 class MainWindow : public QMainWindow
 {
@@ -17,7 +15,18 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void onDeliveryClicked();
+    void onOrganizationsClicked();
+    void onPeopleClicked();
+
 private:
-    Ui::MainWindow *ui;
+    void setupUI();
+    
+    // Modules
+    DeliveryModule *deliveryModule;
+    PeopleModule *peopleModule;
+    OrgModule *orgModule;
 };
+
 #endif // MAINWINDOW_H
