@@ -1,4 +1,5 @@
 #include "people.h"
+#include "database.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QPushButton>
@@ -10,12 +11,14 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QFont>
+#include <QDebug>
 
 class PeopleModulePrivate {
 public:
     QMainWindow *signwindow = nullptr;
     QLineEdit *peoplename = nullptr;
     QLineEdit *peopleid = nullptr;
+    QLineEdit *peopleaddress1 = nullptr;
     QLineEdit *peoplecontact = nullptr;
     QLineEdit *peoplenote = nullptr;
     
@@ -133,6 +136,12 @@ void PeopleModule::setupSignUpDialog()
     d->peopleid->setPlaceholderText("Your ID");
     d->peopleid->setStyleSheet("font-size: 18px;");
 
+    QLabel* addressLabelLabel = new QLabel("Enter Your Adress:");
+    addressLabelLabel->setFont(QFont("Arial", 18, QFont::Bold));
+    d->peopleaddress1 = new QLineEdit();
+    d->peopleaddress1->setPlaceholderText("Your Address");
+    d->peopleaddress1->setStyleSheet("font-size: 18px;");
+
     // Contact
     QLabel* contactLabel = new QLabel("Enter Your Contact Info:");
     contactLabel->setFont(QFont("Arial", 18, QFont::Bold));
@@ -170,13 +179,15 @@ void PeopleModule::setupSignUpDialog()
     layout->addWidget(d->peoplename);
     layout->addWidget(idLabel);
     layout->addWidget(d->peopleid);
+    layout->addWidget(addressLabelLabel);
+    layout->addWidget(d->peopleaddress1);
     layout->addWidget(contactLabel);
     layout->addWidget(d->peoplecontact);
     layout->addWidget(noteLabel);
     layout->addWidget(d->peoplenote);
     layout->addWidget(submitBtn);
 
-    connect(submitBtn, &QPushButton::clicked, this, &PeopleModule::handleSignUp);
+    connect(submitBtn, &QPushButton::clicked, this, &PeopleModule::submitSignUp);
 }
 
 void PeopleModule::setupMealRequestDialog()
@@ -235,7 +246,7 @@ void PeopleModule::setupMealRequestDialog()
     layout->addWidget(d->peopleaddress);
     layout->addWidget(submitBtn);
 
-    connect(submitBtn, &QPushButton::clicked, this, &PeopleModule::handleMealRequest);
+    connect(submitBtn, &QPushButton::clicked, this, &PeopleModule::submitMealRequest);
 }
 
 void PeopleModule::handleSignUp()
@@ -248,3 +259,94 @@ void PeopleModule::handleMealRequest()
     d->mealDialog->exec();
 }
 
+void PeopleModule::submitSignUp()
+{
+    if (d->peoplename->text().trimmed().isEmpty() ||
+        d->peopleid->text().trimmed().isEmpty() ||
+        d->peopleaddress1->text().trimmed().isEmpty() ||
+        d->peoplecontact->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this, "Missing Information", "Please fill in all required fields.");
+        return;
+    }
+
+    QSqlQuery query;
+    query.prepare("INSERT INTO people_sign (name, people_id, address, contact, notes) "
+                  "VALUES (:name, :people_id, :address, :contact, :notes)");
+    query.bindValue(":name", d->peoplename->text().trimmed());
+    query.bindValue(":people_id", d->peopleid->text().trimmed());  // Changed from :id
+    query.bindValue(":address", d->peopleaddress1->text().trimmed());
+    query.bindValue(":contact", d->peoplecontact->text().trimmed());  // Changed from :contact_info
+    query.bindValue(":notes", d->peoplenote->text().trimmed());
+
+    if (query.exec()) {
+        QMessageBox::information(this, "Success", "You have signed up successfully.");
+        d->peoplename->clear();
+        d->peopleid->clear();
+        d->peopleaddress1->clear();
+        d->peoplecontact->clear();
+        d->peoplenote->clear();
+        d->signwindow->close();
+    } else {
+        QMessageBox::critical(this, "Database Error", query.lastError().text());
+    }
+}
+
+void PeopleModule::submitMealRequest()
+{
+    if (d->mealNumberLine->text().trimmed().isEmpty() ||
+        d->peopleaddress->text().trimmed().isEmpty() ||
+        d->mealNumberLine->text().toInt() <= 0) {
+        QMessageBox::warning(this, "Missing Information", "Please fill in all required fields.");
+        return;
+    }
+
+    // Get the most recent person who signed up
+    QSqlQuery getIdQuery;
+    getIdQuery.exec("SELECT id, name FROM people_sign ORDER BY id DESC LIMIT 1");
+
+    int personId = -1;
+    QString personName;
+    if (getIdQuery.next()) {
+        personId = getIdQuery.value(0).toInt();
+        personName = getIdQuery.value(1).toString();
+    }
+    
+    if (personId == -1) {
+        QMessageBox::warning(this, "No Sign-up Found", "Please sign up first before requesting meals.");
+        d->mealNumberLine->clear();
+        d->peopleaddress->clear();
+        d->mealDialog->close();
+        return;
+    }
+
+    QSqlQuery insertQuery;
+    insertQuery.prepare("INSERT INTO meal_requests (person_id, meal_count, address) "
+                        "VALUES (:person_id, :meal_count, :address)");
+    insertQuery.bindValue(":person_id", personId);
+    insertQuery.bindValue(":meal_count", d->mealNumberLine->text().trimmed().toInt());
+    insertQuery.bindValue(":address", d->peopleaddress->text().trimmed());
+
+    if (insertQuery.exec()) {
+        // Insert into all_addresses table
+        QSqlQuery addrQuery;
+        addrQuery.prepare("INSERT INTO all_addresses (source_type, source_id, person_name, provider_name, address, details) "
+                          "VALUES ('meal_request', :source_id, :person_name, NULL, :address, :details)");
+        addrQuery.bindValue(":source_id", personId);
+        addrQuery.bindValue(":person_name", personName);
+        addrQuery.bindValue(":address", d->peopleaddress->text().trimmed());
+        addrQuery.bindValue(":details", QString("%1 meals requested").arg(d->mealNumberLine->text().trimmed()));
+
+        if (addrQuery.exec()) {
+            // Run matching after successful meal request insertion
+            DatabaseManager::matchAddresses();
+        }
+        
+        QMessageBox::information(this, "Success", "Your meal request has been submitted.");
+        d->mealNumberLine->clear();
+        d->peopleaddress->clear();
+        d->mealDialog->close();
+    } else {
+        QMessageBox::critical(this, "Database Error", 
+                              "Error: " + insertQuery.lastError().text());
+    }
+}

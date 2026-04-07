@@ -7,6 +7,8 @@ class DatabaseManager {
 public:
     // Initialize the database and create all necessary tables
     static bool initDatabase();
+    // Function for matching addresses
+    static void matchAddresses();
     
 private:
     // Helper methods for table creation

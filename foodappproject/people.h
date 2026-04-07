@@ -19,6 +19,8 @@ private:
     void setupUI();
     void setupSignUpDialog();
     void setupMealRequestDialog();
+    void submitSignUp();
+    void submitMealRequest();
     
     // Pimpl pattern for encapsulation
     class PeopleModulePrivate *d;

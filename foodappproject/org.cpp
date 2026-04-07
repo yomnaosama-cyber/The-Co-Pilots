@@ -1,4 +1,5 @@
 #include "org.h"
+#include "database.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -321,7 +322,11 @@ void OrgModule::submitDonation()
             .arg(d->foodAmount->text().trimmed())
             .arg(d->donationType->text().trimmed())
             .arg(d->deliveryMethod->currentText()));
-        addrQuery.exec();
+            
+        if (addrQuery.exec()) {
+            // Run matching after successful donation insertion
+            DatabaseManager::matchAddresses();
+        }
 
         QMessageBox::information(this, "Success", "Donation details submitted successfully.");
         d->providerName->clear();
