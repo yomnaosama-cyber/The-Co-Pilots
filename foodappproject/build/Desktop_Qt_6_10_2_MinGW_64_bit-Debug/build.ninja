@@ -73,6 +73,38 @@ build CMakeFiles/foodappproject.dir/mainwindow.cpp.obj: CXX_COMPILER__foodapppro
   OBJECT_DIR = CMakeFiles\foodappproject.dir
   OBJECT_FILE_DIR = CMakeFiles\foodappproject.dir
 
+build CMakeFiles/foodappproject.dir/database.cpp.obj: CXX_COMPILER__foodappproject_unscanned_Debug C$:/Users/Microsoft/The-Co-Pilots/foodappproject/database.cpp || cmake_object_order_depends_target_foodappproject
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_SQL_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\foodappproject.dir\database.cpp.obj.d
+  FLAGS = -DQT_QML_DEBUG -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/include -isystem C:/Qt/6.10.2/mingw_64/include/QtCore -isystem C:/Qt/6.10.2/mingw_64/include -isystem C:/Qt/6.10.2/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.10.2/mingw_64/include/QtWidgets -isystem C:/Qt/6.10.2/mingw_64/include/QtGui -isystem C:/Qt/6.10.2/mingw_64/include/QtSql
+  OBJECT_DIR = CMakeFiles\foodappproject.dir
+  OBJECT_FILE_DIR = CMakeFiles\foodappproject.dir
+
+build CMakeFiles/foodappproject.dir/delivery.cpp.obj: CXX_COMPILER__foodappproject_unscanned_Debug C$:/Users/Microsoft/The-Co-Pilots/foodappproject/delivery.cpp || cmake_object_order_depends_target_foodappproject
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_SQL_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\foodappproject.dir\delivery.cpp.obj.d
+  FLAGS = -DQT_QML_DEBUG -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/include -isystem C:/Qt/6.10.2/mingw_64/include/QtCore -isystem C:/Qt/6.10.2/mingw_64/include -isystem C:/Qt/6.10.2/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.10.2/mingw_64/include/QtWidgets -isystem C:/Qt/6.10.2/mingw_64/include/QtGui -isystem C:/Qt/6.10.2/mingw_64/include/QtSql
+  OBJECT_DIR = CMakeFiles\foodappproject.dir
+  OBJECT_FILE_DIR = CMakeFiles\foodappproject.dir
+
+build CMakeFiles/foodappproject.dir/people.cpp.obj: CXX_COMPILER__foodappproject_unscanned_Debug C$:/Users/Microsoft/The-Co-Pilots/foodappproject/people.cpp || cmake_object_order_depends_target_foodappproject
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_SQL_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\foodappproject.dir\people.cpp.obj.d
+  FLAGS = -DQT_QML_DEBUG -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/include -isystem C:/Qt/6.10.2/mingw_64/include/QtCore -isystem C:/Qt/6.10.2/mingw_64/include -isystem C:/Qt/6.10.2/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.10.2/mingw_64/include/QtWidgets -isystem C:/Qt/6.10.2/mingw_64/include/QtGui -isystem C:/Qt/6.10.2/mingw_64/include/QtSql
+  OBJECT_DIR = CMakeFiles\foodappproject.dir
+  OBJECT_FILE_DIR = CMakeFiles\foodappproject.dir
+
+build CMakeFiles/foodappproject.dir/org.cpp.obj: CXX_COMPILER__foodappproject_unscanned_Debug C$:/Users/Microsoft/The-Co-Pilots/foodappproject/org.cpp || cmake_object_order_depends_target_foodappproject
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_SQL_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\foodappproject.dir\org.cpp.obj.d
+  FLAGS = -DQT_QML_DEBUG -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/include -isystem C:/Qt/6.10.2/mingw_64/include/QtCore -isystem C:/Qt/6.10.2/mingw_64/include -isystem C:/Qt/6.10.2/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.10.2/mingw_64/include/QtWidgets -isystem C:/Qt/6.10.2/mingw_64/include/QtGui -isystem C:/Qt/6.10.2/mingw_64/include/QtSql
+  OBJECT_DIR = CMakeFiles\foodappproject.dir
+  OBJECT_FILE_DIR = CMakeFiles\foodappproject.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target foodappproject
@@ -81,7 +113,7 @@ build CMakeFiles/foodappproject.dir/mainwindow.cpp.obj: CXX_COMPILER__foodapppro
 #############################################
 # Link the executable foodappproject.exe
 
-build foodappproject.exe: CXX_EXECUTABLE_LINKER__foodappproject_Debug CMakeFiles/foodappproject.dir/foodappproject_autogen/mocs_compilation.cpp.obj CMakeFiles/foodappproject.dir/main.cpp.obj CMakeFiles/foodappproject.dir/mainwindow.cpp.obj | C$:/Qt/6.10.2/mingw_64/lib/libQt6Widgets.a C$:/Qt/6.10.2/mingw_64/lib/libQt6Sql.a C$:/Qt/6.10.2/mingw_64/lib/libQt6Gui.a C$:/Qt/6.10.2/mingw_64/lib/libQt6Core.a || foodappproject_autogen foodappproject_autogen_timestamp_deps
+build foodappproject.exe: CXX_EXECUTABLE_LINKER__foodappproject_Debug CMakeFiles/foodappproject.dir/foodappproject_autogen/mocs_compilation.cpp.obj CMakeFiles/foodappproject.dir/main.cpp.obj CMakeFiles/foodappproject.dir/mainwindow.cpp.obj CMakeFiles/foodappproject.dir/database.cpp.obj CMakeFiles/foodappproject.dir/delivery.cpp.obj CMakeFiles/foodappproject.dir/people.cpp.obj CMakeFiles/foodappproject.dir/org.cpp.obj | C$:/Qt/6.10.2/mingw_64/lib/libQt6Widgets.a C$:/Qt/6.10.2/mingw_64/lib/libQt6Sql.a C$:/Qt/6.10.2/mingw_64/lib/libQt6Gui.a C$:/Qt/6.10.2/mingw_64/lib/libQt6Core.a || foodappproject_autogen foodappproject_autogen_timestamp_deps
   FLAGS = -DQT_QML_DEBUG -g
   LINK_LIBRARIES = C:/Qt/6.10.2/mingw_64/lib/libQt6Widgets.a  C:/Qt/6.10.2/mingw_64/lib/libQt6Sql.a  C:/Qt/6.10.2/mingw_64/lib/libQt6Gui.a  -ld3d11  -ldxgi  -ldxguid  -ld3d12  C:/Qt/6.10.2/mingw_64/lib/libQt6Core.a  -lmpr  -luserenv  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\foodappproject.dir

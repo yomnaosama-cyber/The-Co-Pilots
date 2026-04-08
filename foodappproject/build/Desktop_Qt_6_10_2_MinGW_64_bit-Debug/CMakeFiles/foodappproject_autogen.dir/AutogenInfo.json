@@ -363,9 +363,33 @@
 	"HEADERS" : 
 	[
 		[
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/database.h",
+			"MU",
+			"EWIEGA46WW/moc_database.cpp",
+			null
+		],
+		[
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/delivery.h",
+			"MU",
+			"EWIEGA46WW/moc_delivery.cpp",
+			null
+		],
+		[
 			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/mainwindow.h",
 			"MU",
 			"EWIEGA46WW/moc_mainwindow.cpp",
+			null
+		],
+		[
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/org.h",
+			"MU",
+			"EWIEGA46WW/moc_org.cpp",
+			null
+		],
+		[
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/people.h",
+			"MU",
+			"EWIEGA46WW/moc_people.cpp",
 			null
 		]
 	],
@@ -442,12 +466,28 @@
 	"SOURCES" : 
 	[
 		[
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/database.cpp",
+			"MU",
+			null
+		],
+		[
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/delivery.cpp",
+			"MU",
+			null
+		],
+		[
 			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/main.cpp",
 			"MU",
 			null
 		],
 		[
 			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/mainwindow.cpp",
+			"MU",
+			null
+		],
+		[ "C:/Users/Microsoft/The-Co-Pilots/foodappproject/org.cpp", "MU", null ],
+		[
+			"C:/Users/Microsoft/The-Co-Pilots/foodappproject/people.cpp",
 			"MU",
 			null
 		]

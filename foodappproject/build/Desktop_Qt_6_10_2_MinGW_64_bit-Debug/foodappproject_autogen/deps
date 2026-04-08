@@ -1,4 +1,6 @@
 foodappproject_autogen/timestamp: \
+	C:/Qt/6.10.2/mingw_64/include/QtCore/QString \
+	C:/Qt/6.10.2/mingw_64/include/QtCore/QVector \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/q17memory.h \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/q20functional.h \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/q20iterator.h \
@@ -123,6 +125,7 @@ foodappproject_autogen/timestamp: \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/qutf8stringview.h \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/qvariant.h \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/qvarlengtharray.h \
+	C:/Qt/6.10.2/mingw_64/include/QtCore/qvector.h \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/qversiontagging.h \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/qxptype_traits.h \
 	C:/Qt/6.10.2/mingw_64/include/QtCore/qyieldcpu.h \
@@ -152,7 +155,9 @@ foodappproject_autogen/timestamp: \
 	C:/Qt/6.10.2/mingw_64/include/QtGui/qtransform.h \
 	C:/Qt/6.10.2/mingw_64/include/QtGui/qwindowdefs.h \
 	C:/Qt/6.10.2/mingw_64/include/QtGui/qwindowdefs_win.h \
+	C:/Qt/6.10.2/mingw_64/include/QtWidgets/QDialog \
 	C:/Qt/6.10.2/mingw_64/include/QtWidgets/QMainWindow \
+	C:/Qt/6.10.2/mingw_64/include/QtWidgets/qdialog.h \
 	C:/Qt/6.10.2/mingw_64/include/QtWidgets/qmainwindow.h \
 	C:/Qt/6.10.2/mingw_64/include/QtWidgets/qsizepolicy.h \
 	C:/Qt/6.10.2/mingw_64/include/QtWidgets/qtabwidget.h \
@@ -595,8 +600,15 @@ foodappproject_autogen/timestamp: \
 	C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/3.30.5/CMakeRCCompiler.cmake \
 	C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/CMakeFiles/3.30.5/CMakeSystem.cmake \
 	C:/Users/Microsoft/The-Co-Pilots/foodappproject/build/Desktop_Qt_6_10_2_MinGW_64_bit-Debug/foodappproject_autogen/moc_predefs.h \
+	C:/Users/Microsoft/The-Co-Pilots/foodappproject/database.cpp \
+	C:/Users/Microsoft/The-Co-Pilots/foodappproject/database.h \
+	C:/Users/Microsoft/The-Co-Pilots/foodappproject/delivery.cpp \
+	C:/Users/Microsoft/The-Co-Pilots/foodappproject/delivery.h \
 	C:/Users/Microsoft/The-Co-Pilots/foodappproject/main.cpp \
 	C:/Users/Microsoft/The-Co-Pilots/foodappproject/mainwindow.cpp \
 	C:/Users/Microsoft/The-Co-Pilots/foodappproject/mainwindow.h \
-	C:/Users/Microsoft/The-Co-Pilots/foodappproject/mainwindow.ui \
+	C:/Users/Microsoft/The-Co-Pilots/foodappproject/org.cpp \
+	C:/Users/Microsoft/The-Co-Pilots/foodappproject/org.h \
+	C:/Users/Microsoft/The-Co-Pilots/foodappproject/people.cpp \
+	C:/Users/Microsoft/The-Co-Pilots/foodappproject/people.h \
 	C:/Qt/Tools/CMake_64/bin/cmake.exe
