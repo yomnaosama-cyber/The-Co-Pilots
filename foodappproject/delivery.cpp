@@ -47,7 +47,7 @@ DeliveryModule::~DeliveryModule()
 }
 
 void DeliveryModule::setupUI()
-{
+{// this is the delivery system
     setWindowTitle("Delivery");
     setMinimumSize(800, 600);
     setStyleSheet("QMainWindow { background-color: #efe4d0; }");
@@ -63,7 +63,7 @@ void DeliveryModule::setupUI()
     header->setFont(QFont("Arial", 40, QFont::Bold));
     header->setAlignment(Qt::AlignCenter);
     header->setStyleSheet("color: #813e15; background-color: transparent; padding: 20px;");
-
+// made button style instead of doing each one separatly
     QString buttonStyle = 
         "QPushButton {"
         "   background-color: #f4ece7;"
@@ -104,7 +104,7 @@ void DeliveryModule::setupUI()
     layout->addStretch();
 
     setupSignUpDialog();
-
+// made the connect part for each signal a customized slot
     connect(signUpBtn, &QPushButton::clicked, this, &DeliveryModule::handleSignUp);
     connect(notificationsBtn, &QPushButton::clicked, this, &DeliveryModule::handleNotifications);
     connect(pickupBtn, &QPushButton::clicked, this, &DeliveryModule::handlePickup);
@@ -112,7 +112,7 @@ void DeliveryModule::setupUI()
         d->loginDialog->exec();
     });
 }
-
+// opens when we press sign up
 void DeliveryModule::setupSignUpDialog()
 {
     d->signUpDialog = new QDialog(this);
@@ -156,7 +156,7 @@ void DeliveryModule::setupSignUpDialog()
     // Create form fields
     QLabel* nameLabel = new QLabel("Name:");
     d->nameField = new QLineEdit();
-    d->nameField->setPlaceholderText("Enter your name");
+    d->nameField->setPlaceholderText("Enter your name");// inside the line edit this text is entered
 
     QLabel* nationalIdLabel = new QLabel("National ID Number:");
     d->nationalIdField = new QLineEdit();
@@ -168,8 +168,8 @@ void DeliveryModule::setupSignUpDialog()
 
     QLabel* ageLabel = new QLabel("Age:");
     d->ageField = new QLineEdit();
-    d->ageField->setValidator(new QIntValidator(0, 120, d->ageField));
-    d->ageField->setPlaceholderText("Enter age (0-120)");
+    d->ageField->setValidator(new QIntValidator(0, 60, d->ageField));
+    d->ageField->setPlaceholderText("Enter age (0-60)");
 
     QLabel* cityLabel = new QLabel("Preferred City/Town:");
     d->cityField = new QLineEdit();
@@ -193,11 +193,11 @@ void DeliveryModule::setupSignUpDialog()
     layout->addWidget(d->vehicleField);
 
     QPushButton* submitBtn = new QPushButton("Submit Registration");
-    submitBtn->setCursor(Qt::PointingHandCursor);
+    submitBtn->setCursor(Qt::PointingHandCursor);// this just mean when we are on submit btn cursor chane from normal to hand cursor
     layout->addWidget(submitBtn);
 
     connect(submitBtn, &QPushButton::clicked, [this]() {
-        // Validation
+        // Validation to make sure no field is empty
         if (d->nameField->text().isEmpty() || 
             d->nationalIdField->text().isEmpty() ||
             d->personalIdField->text().isEmpty() || 
@@ -210,18 +210,18 @@ void DeliveryModule::setupSignUpDialog()
 
         bool ageOk;
         int age = d->ageField->text().toInt(&ageOk);
-        if (!ageOk || age < 0 || age > 120) {
+        if (!ageOk || age < 0 || age > 60 ){
             QMessageBox::warning(d->signUpDialog, "Validation Error", "Please enter a valid age!");
             return;
-        }
+        }// restricting people  age to write from 0 to 60 exclusive
         QSqlQuery checkQuery;
         checkQuery.prepare("SELECT COUNT(*) FROM users WHERE personal_id = :id");
-        checkQuery.bindValue(":id", d->personalIdField->text().trimmed());
+        checkQuery.bindValue(":id", d->personalIdField->text().trimmed());// here we are counting rows with same id to see whether someone has same id or not
 
         if (checkQuery.exec() && checkQuery.next()) {
             if (checkQuery.value(0).toInt() > 0) {
                 QMessageBox::warning(d->signUpDialog, "Error",
-                                     "This Personal ID is already registered!");
+                                     "This Personal ID is already registered!");//if yes this id already registered so than delievry sign with other
                 return;
             }
         }
@@ -235,7 +235,7 @@ void DeliveryModule::setupSignUpDialog()
         query.bindValue(":age", QString::number(age));
         query.bindValue(":city", d->cityField->text().trimmed());
         query.bindValue(":vehicle", d->vehicleField->text().trimmed());
-
+        // binding values to database
         if (query.exec()) {
             // ✅ SET CURRENT DELIVERY PERSON DATA
             d->currentDeliveryPersonId = d->personalIdField->text().trimmed();
@@ -255,8 +255,8 @@ void DeliveryModule::setupSignUpDialog()
             d->cityField->clear();
             d->vehicleField->clear();
 
-            // ✅ NOW THIS WILL WORK
-            handleNotifications();
+
+            d->signUpDialog->close();
         }
          else {
             QMessageBox::critical(d->signUpDialog, "Database Error",
@@ -286,7 +286,7 @@ void DeliveryModule::setupLoginDialog()
 
         QString enteredId = d->loginIdField->text().trimmed();
 
-        if (enteredId.isEmpty()) {
+        if (enteredId.isEmpty()) {// make sure that user enter id
             QMessageBox::warning(d->loginDialog, "Error", "Please enter your ID!");
             return;
         }
@@ -294,7 +294,7 @@ void DeliveryModule::setupLoginDialog()
         QSqlQuery query;
         query.prepare("SELECT name FROM users WHERE personal_id = :id");
         query.bindValue(":id", enteredId);
-
+        // find row with ame id entered
         if (!query.exec()) {
             QMessageBox::critical(d->loginDialog, "Database Error",
                                   query.lastError().text());
@@ -304,7 +304,7 @@ void DeliveryModule::setupLoginDialog()
         if (query.next()) {
             QString name = query.value(0).toString();
 
-            // ✅ SAVE CURRENT USER
+            //store name of the driver
             d->currentDeliveryPersonId = enteredId;
             d->currentDeliveryPersonName = name;
 
@@ -313,8 +313,6 @@ void DeliveryModule::setupLoginDialog()
 
             d->loginDialog->close();
 
-            // go to notifications
-            handleNotifications();
 
         } else {
             QMessageBox::warning(d->loginDialog, "Error",
@@ -324,7 +322,7 @@ void DeliveryModule::setupLoginDialog()
 }
 
 void DeliveryModule::setupNotificationsDialog()
-{
+{//match delievery requests
     d->notificationsDialog = new QDialog(this);
     d->notificationsDialog->setWindowTitle("Matching Delivery Requests");
     d->notificationsDialog->setMinimumSize(700, 600);
@@ -383,10 +381,12 @@ void DeliveryModule::setupNotificationsDialog()
     buttonLayout->addStretch();
     buttonLayout->addWidget(closeBtn);
     layout->addLayout(buttonLayout);
-
+    // When the user selects an item in the delivery list
     connect(d->matchingDeliveriesList, &QListWidget::itemSelectionChanged, [this]() {
-        QListWidgetItem* item = d->matchingDeliveriesList->currentItem();
-        if (item) {
+
+        //so we can get the currently selected item
+            QListWidgetItem* item = d->matchingDeliveriesList->currentItem();
+        if (item) {// saves the current selected item data from database in variables inorder to show it
             QString pickupLocation = item->data(Qt::UserRole).toString();
             QString deliveryLocation = item->data(Qt::UserRole + 1).toString();
             QString providerName = item->data(Qt::UserRole + 2).toString();
@@ -406,7 +406,7 @@ void DeliveryModule::setupNotificationsDialog()
                     .arg(matchScore));
         }
     });
-
+// once user accept the delievery order
     connect(acceptBtn, &QPushButton::clicked, [this]() {
         QListWidgetItem* item = d->matchingDeliveriesList->currentItem();
         if (item) {
@@ -472,7 +472,7 @@ void DeliveryModule::handleNotifications()
                   "AND aa2.source_type = 'donation' "
                   "AND aa1.match_status = 'matched' "
                   "ORDER BY aa1.match_score DESC");
-
+// Loop through all returned rows from database
     if (!query.exec()) {
         QMessageBox::critical(this, "Database Error",
                               "Error retrieving matched deliveries: " + query.lastError().text());
@@ -488,12 +488,12 @@ void DeliveryModule::handleNotifications()
         QString personName = query.value(4).toString();
         int matchScore = query.value(5).toInt();
 
-        QString displayText = QString("📦 %1 meals from '%2' → '%3' (Score: %4)")
+        QString displayText = QString(" %1 meals from '%2' → '%3' (Score: %4)")
                                   .arg(personName)
                                   .arg(pickupLocation.length() > 20 ? pickupLocation.left(20) + "..." : pickupLocation)
                                   .arg(deliveryLocation.length() > 20 ? deliveryLocation.left(20) + "..." : deliveryLocation)
                                   .arg(matchScore);
-
+        // Store  data inside the item (used later when user clicks it)
         QListWidgetItem* item = new QListWidgetItem(displayText);
         item->setData(Qt::UserRole, pickupLocation);
         item->setData(Qt::UserRole + 1, deliveryLocation);
@@ -503,7 +503,7 @@ void DeliveryModule::handleNotifications()
         item->setData(Qt::UserRole + 5, deliveryId);
 
         d->matchingDeliveriesList->addItem(item);
-        matchCount++;
+        matchCount++;// increase every loop to know how much math count is there
     }
 
     if (matchCount == 0) {
