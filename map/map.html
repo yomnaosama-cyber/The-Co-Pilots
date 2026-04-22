@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Food Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="map" style="height:100vh;"></div>
+
+<script>
+let pickup = null;
+let drop = null;
+
+let map = L.map('map').setView([30.0444, 31.2357], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+map.on('click', async function(e) {
+
+    if (!pickup) {
+        pickup = e.latlng;
+        L.marker(pickup).addTo(map).bindPopup("Pickup").openPopup();
+        alert("Pickup selected");
+    } else {
+        drop = e.latlng;
+        L.marker(drop).addTo(map).bindPopup("Drop").openPopup();
+
+        // send to backend
+        await fetch("http://localhost:3000/order", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ pickup, drop })
+        });
+
+        alert("Sent to backend!");
+    }
+});
+</script>
+
+</body>
+</html>
