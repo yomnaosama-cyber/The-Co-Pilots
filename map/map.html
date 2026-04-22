@@ -1,42 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Food Map</title>
+  <title>Food Delivery Map</title>
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body { margin: 0; }
+    #map { height: 100vh; }
+  </style>
 </head>
+
 <body>
 
-<div id="map" style="height:100vh;"></div>
+<div id="map"></div>
 
 <script>
-let pickup = null;
-let drop = null;
+  // Create map centered on Cairo
+  var map = L.map('map').setView([30.0444, 31.2357], 13);
 
-let map = L.map('map').setView([30.0444, 31.2357], 13);
+  // OpenStreetMap tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  let pickup = null;
+  let drop = null;
 
-map.on('click', async function(e) {
+  map.on('click', function(e) {
 
     if (!pickup) {
-        pickup = e.latlng;
-        L.marker(pickup).addTo(map).bindPopup("Pickup").openPopup();
-        alert("Pickup selected");
-    } else {
-        drop = e.latlng;
-        L.marker(drop).addTo(map).bindPopup("Drop").openPopup();
+      pickup = e.latlng;
 
-        // send to backend
-        await fetch("http://localhost:3000/order", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ pickup, drop })
-        });
+      L.marker(pickup)
+        .addTo(map)
+        .bindPopup("Pickup 📍")
+        .openPopup();
 
-        alert("Sent to backend!");
+      alert("Pickup selected");
     }
-});
+
+    else if (!drop) {
+      drop = e.latlng;
+
+      L.marker(drop)
+        .addTo(map)
+        .bindPopup("Drop 📦")
+        .openPopup();
+
+      alert("Drop selected");
+    }
+
+    else {
+      alert("Already selected pickup and drop");
+    }
+  });
+
 </script>
 
 </body>
