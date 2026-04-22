@@ -1,0 +1,5 @@
+/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles/foodappproject.dir
+/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles/edit_cache.dir
+/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles/rebuild_cache.dir
+/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles/foodappproject_autogen_timestamp_deps.dir
+/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles/foodappproject_autogen.dir
