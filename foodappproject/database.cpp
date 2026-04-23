@@ -123,11 +123,11 @@ query.exec("ALTER TABLE all_addresses ADD COLUMN street TEXT");
 query.exec("ALTER TABLE all_addresses ADD COLUMN address_details TEXT");
 }
 
-// Function to match addresses based on common words
+
 void DatabaseManager::matchAddresses() {
     QSqlQuery query;
 
-    // ✅ now also selecting city and street
+   
     query.exec("SELECT id, address, person_name, city, street FROM all_addresses "
                "WHERE source_type = 'meal_request' AND match_status = 'unmatched' "
                "ORDER BY created_at ASC");
@@ -139,15 +139,14 @@ void DatabaseManager::matchAddresses() {
         QString mealCity = query.value(3).toString().toLower().trimmed();   // ✅ new
         QString mealStreet = query.value(4).toString().toLower().trimmed(); // ✅ new
 
-        // split street into words for scoring
+       
         QStringList mealWords = mealStreet
                                     .remove(QRegularExpression("[^a-zA-Z0-9\\s]"))
                                     .split(" ", Qt::SkipEmptyParts);
 
-        // Find best matching donation
         QSqlQuery donationQuery;
 
-        // ✅ now also selecting city and street
+     
         donationQuery.exec("SELECT id, address, provider_name, city, street FROM all_addresses "
                            "WHERE source_type = 'donation' AND match_status = 'unmatched' "
                            "ORDER BY created_at ASC");
@@ -162,15 +161,15 @@ void DatabaseManager::matchAddresses() {
             QString donationCity = donationQuery.value(3).toString().toLower().trimmed();   // ✅ new
             QString donationStreet = donationQuery.value(4).toString().toLower().trimmed(); // ✅ new
 
-            // ✅ STEP 1: city must match exactly, otherwise skip
+           
             if (mealCity != donationCity) {
                 continue; // wrong city, don't even score
             }
 
-            // ✅ STEP 2: city matches, start score at 1
+            //  city matches, start score at 1
             int matchScore = 1;
 
-            // ✅ STEP 3: score by street similarity
+            //  score by street similarity
             QStringList donationWords = donationStreet
                                             .remove(QRegularExpression("[^a-zA-Z0-9\\s]"))
                                             .split(" ", Qt::SkipEmptyParts);
