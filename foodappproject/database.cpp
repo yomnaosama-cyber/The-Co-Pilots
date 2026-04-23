@@ -97,29 +97,32 @@ void DatabaseManager::createFoodDonationsTable() {
                "delivery_method TEXT NOT NULL, "
                "donation_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
 }
-
 void DatabaseManager::createAddressesTable() {
     QSqlQuery query;
+query.exec("CREATE TABLE IF NOT EXISTS all_addresses ("
+           "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+           "source_type TEXT NOT NULL,"
+           "source_id INTEGER NOT NULL,"
+           "person_name TEXT,"
+           "provider_name TEXT,"
+           "address TEXT NOT NULL,"
+           "city TEXT,"
+           "street TEXT,"
+           "address_details TEXT,"
+           "details TEXT,"              // food details
+           "match_status TEXT DEFAULT 'unmatched',"
+           "matched_with_id INTEGER DEFAULT -1,"
+           "match_score INTEGER DEFAULT 0,"
+           "assigned_to TEXT,"
+           "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
 
-
-        query.exec("CREATE TABLE IF NOT EXISTS all_addresses ("
-                   "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                   "source_type TEXT NOT NULL,"
-                   "source_id INTEGER NOT NULL,"
-                   "person_name TEXT,"
-                   "provider_name TEXT,"
-                   "address TEXT NOT NULL,"
-                   "details TEXT,"
-                   "match_status TEXT DEFAULT 'unmatched',"
-                   "matched_with_id INTEGER DEFAULT -1,"
-                   "match_score INTEGER DEFAULT 0,"
-                   "assigned_to TEXT,"   // ✅ ADD HERE
-                   "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
-
-        // ✅ Safety: if table already existed before
-        query.exec("ALTER TABLE all_addresses ADD COLUMN assigned_to TEXT");
-
+// migrations
+query.exec("ALTER TABLE all_addresses ADD COLUMN assigned_to TEXT");
+query.exec("ALTER TABLE all_addresses ADD COLUMN city TEXT");
+query.exec("ALTER TABLE all_addresses ADD COLUMN street TEXT");
+query.exec("ALTER TABLE all_addresses ADD COLUMN address_details TEXT");
 }
+
 // Function to match addresses based on common words
 void DatabaseManager::matchAddresses() {
     QSqlQuery query;
