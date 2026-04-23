@@ -25,6 +25,9 @@ public:
     QDialog *mealDialog = nullptr;
     QLineEdit *mealNumberLine = nullptr;
     QLineEdit *peopleaddress = nullptr;
+    QLineEdit *city = nullptr;
+    QLineEdit *street = nullptr;
+    QLineEdit *addressDetails = nullptr;
 };
 
 PeopleModule::PeopleModule(QWidget *parent)
@@ -203,23 +206,30 @@ void PeopleModule::setupMealRequestDialog()
     mealLabel->setFont(QFont("Arial", 18, QFont::Bold));
     mealLabel->setAlignment(Qt::AlignCenter);
     mealLabel->setStyleSheet("color: #813e15;");
-    
+
     d->mealNumberLine = new QLineEdit();
     d->mealNumberLine->setPlaceholderText("Enter number of meals in numerals");
     d->mealNumberLine->setMinimumHeight(60);
     d->mealNumberLine->setAlignment(Qt::AlignCenter);
     d->mealNumberLine->setStyleSheet("font-size: 18px;");
 
-    QLabel* addressLabel = new QLabel("Enter Your Address:");
-    addressLabel->setFont(QFont("Arial", 18, QFont::Bold));
-    addressLabel->setAlignment(Qt::AlignCenter);
-    addressLabel->setStyleSheet("color: #813e15;");
-    
-    d->peopleaddress = new QLineEdit();
-    d->peopleaddress->setPlaceholderText("Your Address");
-    d->peopleaddress->setMinimumHeight(60);
-    d->peopleaddress->setAlignment(Qt::AlignCenter);
-    d->peopleaddress->setStyleSheet("font-size: 18px;");
+    QLabel* cityLabel = new QLabel("Enter Your City:");
+    cityLabel->setStyleSheet("color: #813e15; font-size: 18px; font-weight: bold;");
+    d->city = new QLineEdit();
+    d->city->setPlaceholderText("Your City");
+    d->city->setMinimumHeight(60);
+
+    QLabel* streetLabel = new QLabel("Enter Your Street:");
+    streetLabel->setStyleSheet("color: #813e15; font-size: 18px; font-weight: bold;");
+    d->street = new QLineEdit();
+    d->street->setPlaceholderText("Your Street");
+    d->street->setMinimumHeight(60);
+
+    QLabel* addressDetailsLabel = new QLabel("Building/Floor/Landmark:");
+    addressDetailsLabel->setStyleSheet("color: #813e15; font-size: 18px; font-weight: bold;");
+    d->addressDetails = new QLineEdit();
+    d->addressDetails->setPlaceholderText("e.g. Building 5, Floor 3");
+    d->addressDetails->setMinimumHeight(60);
 
     QPushButton* submitBtn = new QPushButton("Submit");
     submitBtn->setFixedSize(150, 50);
@@ -238,12 +248,17 @@ void PeopleModule::setupMealRequestDialog()
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
         "}"
-    );
+        );
+
 
     layout->addWidget(mealLabel);
     layout->addWidget(d->mealNumberLine);
-    layout->addWidget(addressLabel);
-    layout->addWidget(d->peopleaddress);
+    layout->addWidget(cityLabel);
+    layout->addWidget(d->city);
+    layout->addWidget(streetLabel);
+    layout->addWidget(d->street);
+    layout->addWidget(addressDetailsLabel);
+    layout->addWidget(d->addressDetails);
     layout->addWidget(submitBtn);
 
     connect(submitBtn, &QPushButton::clicked, this, &PeopleModule::submitMealRequest);
@@ -293,14 +308,20 @@ void PeopleModule::submitSignUp()
 
 void PeopleModule::submitMealRequest()
 {
+    // ✅ updated validation
     if (d->mealNumberLine->text().trimmed().isEmpty() ||
-        d->peopleaddress->text().trimmed().isEmpty() ||
+        d->city->text().trimmed().isEmpty() ||
+        d->street->text().trimmed().isEmpty() ||
         d->mealNumberLine->text().toInt() <= 0) {
         QMessageBox::warning(this, "Missing Information", "Please fill in all required fields.");
         return;
     }
 
-    // Get the most recent person who signed up
+    // ✅ combine city + street for matching
+    QString fullAddress = d->city->text().trimmed() + ", " +
+                          d->street->text().trimmed();
+
+    // Get most recent person who signed up
     QSqlQuery getIdQuery;
     getIdQuery.exec("SELECT id, name FROM people_sign ORDER BY id DESC LIMIT 1");
 
@@ -310,43 +331,52 @@ void PeopleModule::submitMealRequest()
         personId = getIdQuery.value(0).toInt();
         personName = getIdQuery.value(1).toString();
     }
-    
+
     if (personId == -1) {
         QMessageBox::warning(this, "No Sign-up Found", "Please sign up first before requesting meals.");
         d->mealNumberLine->clear();
-        d->peopleaddress->clear();
         d->mealDialog->close();
         return;
     }
 
+    // ✅ updated meal_requests insert
     QSqlQuery insertQuery;
     insertQuery.prepare("INSERT INTO meal_requests (person_id, meal_count, address) "
                         "VALUES (:person_id, :meal_count, :address)");
     insertQuery.bindValue(":person_id", personId);
     insertQuery.bindValue(":meal_count", d->mealNumberLine->text().trimmed().toInt());
-    insertQuery.bindValue(":address", d->peopleaddress->text().trimmed());
+    insertQuery.bindValue(":address", fullAddress);
 
     if (insertQuery.exec()) {
-        // Insert into all_addresses table
+        // ✅ updated all_addresses insert with new columns
         QSqlQuery addrQuery;
-        addrQuery.prepare("INSERT INTO all_addresses (source_type, source_id, person_name, provider_name, address, details) "
-                          "VALUES ('meal_request', :source_id, :person_name, NULL, :address, :details)");
+        addrQuery.prepare("INSERT INTO all_addresses "
+                          "(source_type, source_id, person_name, provider_name, "
+                          "address, city, street, address_details, details) "
+                          "VALUES "
+                          "('meal_request', :source_id, :person_name, NULL, "
+                          ":address, :city, :street, :address_details, :details)");
         addrQuery.bindValue(":source_id", personId);
         addrQuery.bindValue(":person_name", personName);
-        addrQuery.bindValue(":address", d->peopleaddress->text().trimmed());
-        addrQuery.bindValue(":details", QString("%1 meals requested").arg(d->mealNumberLine->text().trimmed()));
+        addrQuery.bindValue(":address", fullAddress);
+        addrQuery.bindValue(":city", d->city->text().trimmed());
+        addrQuery.bindValue(":street", d->street->text().trimmed());
+        addrQuery.bindValue(":address_details", d->addressDetails->text().trimmed());
+        addrQuery.bindValue(":details", QString("%1 meals requested")
+                                            .arg(d->mealNumberLine->text().trimmed()));
 
         if (addrQuery.exec()) {
-            // Run matching after successful meal request insertion
             DatabaseManager::matchAddresses();
         }
-        
+
         QMessageBox::information(this, "Success", "Your meal request has been submitted.");
         d->mealNumberLine->clear();
-        d->peopleaddress->clear();
+        d->city->clear();
+        d->street->clear();
+        d->addressDetails->clear();
         d->mealDialog->close();
     } else {
-        QMessageBox::critical(this, "Database Error", 
+        QMessageBox::critical(this, "Database Error",
                               "Error: " + insertQuery.lastError().text());
     }
 }

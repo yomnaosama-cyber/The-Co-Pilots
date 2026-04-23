@@ -126,102 +126,99 @@ query.exec("ALTER TABLE all_addresses ADD COLUMN address_details TEXT");
 // Function to match addresses based on common words
 void DatabaseManager::matchAddresses() {
     QSqlQuery query;
-    
-    // Get all unmatched meal requests
-    query.exec("SELECT id, address, person_name FROM all_addresses "
+
+    // ✅ now also selecting city and street
+    query.exec("SELECT id, address, person_name, city, street FROM all_addresses "
                "WHERE source_type = 'meal_request' AND match_status = 'unmatched' "
                "ORDER BY created_at ASC");
-    
+
     while (query.next()) {
         int mealId = query.value(0).toInt();
         QString mealAddress = query.value(1).toString();
         QString personName = query.value(2).toString();
-        
-        // Clean and tokenize the meal address
-        QStringList mealWords = mealAddress.toLower()
-            .remove(QRegularExpression("[^a-zA-Z0-9\\s]"))
-            .split(" ", Qt::SkipEmptyParts);
-        
+        QString mealCity = query.value(3).toString().toLower().trimmed();   // ✅ new
+        QString mealStreet = query.value(4).toString().toLower().trimmed(); // ✅ new
+
+        // split street into words for scoring
+        QStringList mealWords = mealStreet
+                                    .remove(QRegularExpression("[^a-zA-Z0-9\\s]"))
+                                    .split(" ", Qt::SkipEmptyParts);
+
         // Find best matching donation
         QSqlQuery donationQuery;
-        donationQuery.exec("SELECT id, address, provider_name FROM all_addresses "
-                          "WHERE source_type = 'donation' AND match_status = 'unmatched' "
-                          "ORDER BY created_at ASC");
-        
+
+        // ✅ now also selecting city and street
+        donationQuery.exec("SELECT id, address, provider_name, city, street FROM all_addresses "
+                           "WHERE source_type = 'donation' AND match_status = 'unmatched' "
+                           "ORDER BY created_at ASC");
+
         int bestMatchId = -1;
         int bestMatchScore = 0;
-        QString bestMatchAddress;
         QString bestMatchProvider;
-        
+
         while (donationQuery.next()) {
             int donationId = donationQuery.value(0).toInt();
-            QString donationAddress = donationQuery.value(1).toString();
             QString providerName = donationQuery.value(2).toString();
-            
-            // Clean and tokenize donation address
-            QStringList donationWords = donationAddress.toLower()
-                .remove(QRegularExpression("[^a-zA-Z0-9\\s]"))
-                .split(" ", Qt::SkipEmptyParts);
-            
-            // Calculate match score (common words count)
-            int matchScore = 0;
+            QString donationCity = donationQuery.value(3).toString().toLower().trimmed();   // ✅ new
+            QString donationStreet = donationQuery.value(4).toString().toLower().trimmed(); // ✅ new
+
+            // ✅ STEP 1: city must match exactly, otherwise skip
+            if (mealCity != donationCity) {
+                continue; // wrong city, don't even score
+            }
+
+            // ✅ STEP 2: city matches, start score at 1
+            int matchScore = 1;
+
+            // ✅ STEP 3: score by street similarity
+            QStringList donationWords = donationStreet
+                                            .remove(QRegularExpression("[^a-zA-Z0-9\\s]"))
+                                            .split(" ", Qt::SkipEmptyParts);
+
             for (const QString& mealWord : mealWords) {
                 if (donationWords.contains(mealWord) && mealWord.length() > 2) {
-                    matchScore++;
+                    matchScore++; // same street word found
                 }
             }
-            
-            // Also check for partial matches
-            for (const QString& mealWord : mealWords) {
-                for (const QString& donationWord : donationWords) {
-                    if (mealWord.length() > 2 && donationWord.length() > 2) {
-                        if (donationWord.contains(mealWord) || mealWord.contains(donationWord)) {
-                            matchScore++;
-                        }
-                    }
-                }
-            }
-            
+
             if (matchScore > bestMatchScore) {
                 bestMatchScore = matchScore;
                 bestMatchId = donationId;
-                bestMatchAddress = donationAddress;
                 bestMatchProvider = providerName;
             }
         }
-        
-        // If a match was found (score > 0), update both entries in the same table
+
+        // ✅ only match if score > 0 (means city matched at minimum)
         if (bestMatchId != -1 && bestMatchScore > 0) {
-            // Update the meal request entry
             QSqlQuery updateMeal;
             updateMeal.prepare("UPDATE all_addresses SET "
-                              "match_status = 'matched', "
-                              "matched_with_id = :match_id, "
-                              "match_score = :score "
-                              "WHERE id = :meal_id");
+                               "match_status = 'matched', "
+                               "matched_with_id = :match_id, "
+                               "match_score = :score "
+                               "WHERE id = :meal_id");
             updateMeal.bindValue(":match_id", bestMatchId);
             updateMeal.bindValue(":score", bestMatchScore);
             updateMeal.bindValue(":meal_id", mealId);
             updateMeal.exec();
-            
-            // Update the donation entry
+
             QSqlQuery updateDonation;
             updateDonation.prepare("UPDATE all_addresses SET "
-                                  "match_status = 'matched', "
-                                  "matched_with_id = :meal_id, "
-                                  "match_score = :score "
-                                  "WHERE id = :donation_id");
+                                   "match_status = 'matched', "
+                                   "matched_with_id = :meal_id, "
+                                   "match_score = :score "
+                                   "WHERE id = :donation_id");
             updateDonation.bindValue(":meal_id", mealId);
             updateDonation.bindValue(":score", bestMatchScore);
             updateDonation.bindValue(":donation_id", bestMatchId);
             updateDonation.exec();
-            
-            qDebug() << "Matched - Meal Request:" << personName 
-                     << "with Donation:" << bestMatchProvider 
+
+            qDebug() << "Matched - Meal:" << personName
+                     << "with Donation:" << bestMatchProvider
+                     << "| City:" << mealCity
                      << "| Score:" << bestMatchScore;
         }
     }
-    
+
     // Log unmatched addresses
     QSqlQuery unmatchedQuery;
     unmatchedQuery.exec("SELECT id, source_type, address, person_name, provider_name, match_status "
