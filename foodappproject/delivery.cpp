@@ -417,7 +417,8 @@ void DeliveryModule::setupNotificationsDialog()
             // Update the all_addresses table to mark this delivery as assigned
             QSqlQuery updateQuery;
             updateQuery.prepare("UPDATE all_addresses SET "
-                                "match_status = 'pending', "
+                                "match_status = 'matched', "    // ← stays matched
+                                "delivery_status = 'accepted', " // ← new!
                                 "assigned_to = :user "
                                 "WHERE id = :id");
 
@@ -471,6 +472,7 @@ void DeliveryModule::handleNotifications()
                   "WHERE aa1.source_type = 'meal_request' "
                   "AND aa2.source_type = 'donation' "
                   "AND aa1.match_status = 'matched' "
+                   "AND aa1.delivery_status = 'pending' "
                   "ORDER BY aa1.match_score DESC");
 // Loop through all returned rows from database
     if (!query.exec()) {

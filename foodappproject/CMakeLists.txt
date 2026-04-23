@@ -26,6 +26,7 @@ set(PROJECT_SOURCES
     people.h
     org.cpp
     org.h
+
 )
 
 # 3. Create the app (Simplified)

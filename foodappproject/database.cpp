@@ -109,11 +109,12 @@ query.exec("CREATE TABLE IF NOT EXISTS all_addresses ("
            "city TEXT,"
            "street TEXT,"
            "address_details TEXT,"
-           "details TEXT,"              // food details
+           "details TEXT,"
            "match_status TEXT DEFAULT 'unmatched',"
            "matched_with_id INTEGER DEFAULT -1,"
            "match_score INTEGER DEFAULT 0,"
            "assigned_to TEXT,"
+            "delivery_status TEXT DEFAULT 'pending',"
            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
 
 // migrations
@@ -121,6 +122,7 @@ query.exec("ALTER TABLE all_addresses ADD COLUMN assigned_to TEXT");
 query.exec("ALTER TABLE all_addresses ADD COLUMN city TEXT");
 query.exec("ALTER TABLE all_addresses ADD COLUMN street TEXT");
 query.exec("ALTER TABLE all_addresses ADD COLUMN address_details TEXT");
+query.exec("ALTER TABLE all_addresses ADD COLUMN delivery_status TEXT");
 }
 
 
