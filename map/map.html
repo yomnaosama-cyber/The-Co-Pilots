@@ -1,97 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>Delivery Map</title>
-
-  <!-- Leaflet CSS -->
+  <title>Food Delivery Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
   <style>
-    body {
-      margin: 0;
-    }
-    #map {
-      height: 100vh;
+    body { margin: 0; }
+    #map { height: 100vh; }
+    #status {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 16px;
+      font-weight: bold;
+      border: 2px solid #813e15;
+      color: #813e15;
     }
   </style>
 </head>
 
 <body>
-
+<div id="status">Loading delivery route...</div>
 <div id="map"></div>
 
 <script>
-  // 🌍 Create map centered on Cairo
-  var map = L.map('map').setView([30.0444, 31.2357], 13);
+  // read coordinates from URL
+  const params = new URLSearchParams(window.location.search);
+  const pickupLat = parseFloat(params.get('pickupLat'));
+  const pickupLng = parseFloat(params.get('pickupLng'));
+  const dropLat   = parseFloat(params.get('dropLat'));
+  const dropLng   = parseFloat(params.get('dropLng'));
 
-  // 🗺️ OpenStreetMap tiles
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+  // check if coordinates exist
+  if (isNaN(pickupLat) || isNaN(dropLat)) {
+    document.getElementById('status').textContent = 
+      '❌ No delivery loaded';
+  } else {
 
-  let pickup = null;
-  let drop = null;
+    // center map between pickup and drop
+    const centerLat = (pickupLat + dropLat) / 2;
+    const centerLng = (pickupLng + dropLng) / 2;
 
-  // 📍 Map click handler
-  map.on('click', async function(e) {
+    var map = L.map('map').setView([centerLat, centerLng], 13);
 
-    console.log("Clicked:", e.latlng);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    // PICKUP
-    if (!pickup) {
-      pickup = e.latlng;
+    // green pickup marker
+    var pickupMarker = L.marker([pickupLat, pickupLng], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="background:green; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>'
+      })
+    }).addTo(map)
+      .bindPopup("📦 Pickup Location")
+      .openPopup();
 
-      L.marker(pickup)
-        .addTo(map)
-        .bindPopup("Pickup 📍")
-        .openPopup();
+    // red drop marker
+    var dropMarker = L.marker([dropLat, dropLng], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="background:red; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>'
+      })
+    }).addTo(map)
+      .bindPopup("🏠 Drop Location");
 
-      alert("Pickup selected");
-    }
+    // dashed line between pickup and drop
+    L.polyline([
+      [pickupLat, pickupLng],
+      [dropLat, dropLng]
+    ], {
+      color: '#813e15', 
+      weight: 3, 
+      dashArray: '10, 10'
+    }).addTo(map);
 
-    // DROP + SEND TO SERVER
-    else if (!drop) {
-      drop = e.latlng;
-
-      L.marker(drop)
-        .addTo(map)
-        .bindPopup("Drop 📦")
-        .openPopup();
-
-      alert("Drop selected");
-
-      console.log("Sending to backend...");
-
-      try {
-        const res = await fetch("http://localhost:3000/order", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            pickup: pickup,
-            drop: drop
-          })
-        });
-
-        const text = await res.text();
-        console.log("Server response:", text);
-
-      } catch (err) {
-        console.error("Error sending to server:", err);
-      }
-    }
-
-    else {
-      alert("Already selected pickup and drop");
-    }
-  });
-
+    // update status bar
+    document.getElementById('status').textContent = 
+      '🚗 On way to pickup';
+  }
 </script>
-
 </body>
 </html>
