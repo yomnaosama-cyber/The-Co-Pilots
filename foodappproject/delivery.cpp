@@ -21,6 +21,7 @@
 #include <QJsonObject>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QProcess>
 class DeliveryModulePrivate {
 public:
     QDialog *signUpDialog = nullptr;
@@ -35,6 +36,9 @@ public:
     QTextEdit *deliveryDetailsText = nullptr;
     QString currentDeliveryPersonId = "";
     QString currentDeliveryPersonName = "";
+    int lastAcceptedDeliveryId = -1;
+    QString lastAcceptedPickupAddress = "";
+    QString lastAcceptedDropAddress = "";
     QDialog *loginDialog = nullptr;
     QLineEdit *loginIdField = nullptr;
 };
@@ -430,9 +434,17 @@ void DeliveryModule::setupNotificationsDialog()
                                 "WHERE id = :id");
 
             updateQuery.bindValue(":id", deliveryId);
-            updateQuery.bindValue(":user", d->currentDeliveryPersonId);
+            updateQuery.bindValue(":user", d->currentDeliveryPersonId.trimmed());
 
             if (updateQuery.exec()) {
+                if (updateQuery.numRowsAffected() <= 0) {
+                    QMessageBox::warning(d->notificationsDialog, "Accept Failed",
+                                         QString("Could not mark delivery as accepted.\n"
+                                                 "Driver ID: '%1'\nDelivery ID: %2")
+                                             .arg(d->currentDeliveryPersonId)
+                                             .arg(deliveryId));
+                    return;
+                }
                 QMessageBox::information(d->notificationsDialog, "✓ Delivery Accepted!",
                                          QString("Great! You've accepted this delivery:\n\n"
                                                  "Pickup: %1\n"
@@ -441,6 +453,11 @@ void DeliveryModule::setupNotificationsDialog()
                                              .arg(pickupLocation)
                                              .arg(deliveryLocation)
                                              .arg(d->currentDeliveryPersonName));
+
+                // Keep the accepted order in memory so Pickup can continue immediately.
+                d->lastAcceptedDeliveryId = deliveryId;
+                d->lastAcceptedPickupAddress = pickupLocation;
+                d->lastAcceptedDropAddress = deliveryLocation;
                 d->notificationsDialog->close();
             } else {
                 QMessageBox::warning(d->notificationsDialog, "Error",
@@ -535,30 +552,82 @@ void DeliveryModule::handlePickup()
     }
 
 
-    QSqlQuery query;
-    query.prepare("SELECT aa1.address as pickup, aa2.address as drop "
-                  "FROM all_addresses aa1 "
-                  "INNER JOIN all_addresses aa2 ON aa1.matched_with_id = aa2.id "
-                  "WHERE aa1.assigned_to = :driver "
-                  "AND aa1.delivery_status = 'accepted'");
-    query.bindValue(":driver", d->currentDeliveryPersonId);
+    int acceptedOrderId = -1;
+    QString pickupAddress;
+    QString dropAddress;
 
-    if (!query.exec() || !query.next()) {
-        QMessageBox::warning(this, "No Order",
-                             "You have no accepted orders yet!\nAccept a delivery first.");
-        return;
+    if (d->lastAcceptedDeliveryId > 0 &&
+        !d->lastAcceptedPickupAddress.isEmpty() &&
+        !d->lastAcceptedDropAddress.isEmpty()) {
+        acceptedOrderId = d->lastAcceptedDeliveryId;
+        pickupAddress = d->lastAcceptedPickupAddress;
+        dropAddress = d->lastAcceptedDropAddress;
+    } else {
+        QSqlQuery query;
+        query.prepare("SELECT id, address, matched_with_id "
+                      "FROM all_addresses "
+                      "WHERE LOWER(TRIM(assigned_to)) = LOWER(TRIM(:driver)) "
+                      "AND LOWER(TRIM(delivery_status)) = 'accepted' "
+                      "ORDER BY id DESC "
+                      "LIMIT 1");
+        query.bindValue(":driver", d->currentDeliveryPersonId);
+
+        if (!query.exec() || !query.next()) {
+            QSqlQuery debugQuery;
+            debugQuery.prepare("SELECT COUNT(*) FROM all_addresses "
+                               "WHERE delivery_status = 'accepted'");
+            int acceptedCount = 0;
+            if (debugQuery.exec() && debugQuery.next()) {
+                acceptedCount = debugQuery.value(0).toInt();
+            }
+
+            QMessageBox::warning(this, "No Order",
+                                 QString("You have no accepted orders yet!\n"
+                                         "Accept a delivery first.\n\n"
+                                         "Debug:\nDriver ID: '%1'\nAccepted rows in DB: %2")
+                                     .arg(d->currentDeliveryPersonId)
+                                     .arg(acceptedCount));
+            return;
+        }
+
+        acceptedOrderId = query.value(0).toInt();
+        pickupAddress = query.value(1).toString();
+        int matchedWithId = query.value(2).toInt();
+
+        if (matchedWithId > 0) {
+            QSqlQuery dropQuery;
+            dropQuery.prepare("SELECT address FROM all_addresses WHERE id = :id");
+            dropQuery.bindValue(":id", matchedWithId);
+            if (dropQuery.exec() && dropQuery.next()) {
+                dropAddress = dropQuery.value(0).toString();
+            }
+        }
     }
 
-    QString pickupAddress = query.value(0).toString();
-    QString dropAddress = query.value(1).toString();
+    if (acceptedOrderId <= 0 || pickupAddress.isEmpty() || dropAddress.isEmpty()) {
+        QSqlQuery debugQuery;
+        debugQuery.prepare("SELECT COUNT(*) FROM all_addresses "
+                           "WHERE delivery_status = 'accepted'");
+        int acceptedCount = 0;
+        if (debugQuery.exec() && debugQuery.next()) {
+            acceptedCount = debugQuery.value(0).toInt();
+        }
+
+        QMessageBox::warning(this, "No Order",
+                             QString("You have no accepted orders yet!\n"
+                                     "Accept a delivery first.\n\n"
+                                     "Debug:\nDriver ID: '%1'\nAccepted rows in DB: %2")
+                                 .arg(d->currentDeliveryPersonId)
+                                 .arg(acceptedCount));
+        return;
+    }
 
 
     QSqlQuery updateQuery;
     updateQuery.prepare("UPDATE all_addresses SET "
                         "delivery_status = 'on_way_to_pickup' "
-                        "WHERE assigned_to = :driver "
-                        "AND delivery_status = 'accepted'");
-    updateQuery.bindValue(":driver", d->currentDeliveryPersonId);
+                        "WHERE id = :id");
+    updateQuery.bindValue(":id", acceptedOrderId);
     updateQuery.exec();
 
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
@@ -578,6 +647,14 @@ void DeliveryModule::handlePickup()
         QJsonObject pickupCoords = QJsonDocument::fromJson(pickupResponse).object();
         pickupReply->deleteLater();
 
+        if (!pickupCoords.contains("lat") || !pickupCoords.contains("lng") ||
+            !pickupCoords["lat"].isDouble() || !pickupCoords["lng"].isDouble()) {
+            QMessageBox::warning(this, "Geocoding Error",
+                                 QString("Could not resolve pickup location.\nResponse: %1")
+                                     .arg(QString::fromUtf8(pickupResponse)));
+            return;
+        }
+
         double pickupLat = pickupCoords["lat"].toDouble();
         double pickupLng = pickupCoords["lng"].toDouble();
 
@@ -594,8 +671,23 @@ void DeliveryModule::handlePickup()
             QJsonObject dropCoords = QJsonDocument::fromJson(dropResponse).object();
             dropReply->deleteLater();
 
+            if (!dropCoords.contains("lat") || !dropCoords.contains("lng") ||
+                !dropCoords["lat"].isDouble() || !dropCoords["lng"].isDouble()) {
+                QMessageBox::warning(this, "Geocoding Error",
+                                     QString("Could not resolve drop location.\nResponse: %1")
+                                         .arg(QString::fromUtf8(dropResponse)));
+                return;
+            }
+
             double dropLat = dropCoords["lat"].toDouble();
             double dropLng = dropCoords["lng"].toDouble();
+
+            if (qFuzzyIsNull(pickupLat) && qFuzzyIsNull(pickupLng) &&
+                qFuzzyIsNull(dropLat) && qFuzzyIsNull(dropLng)) {
+                QMessageBox::warning(this, "Geocoding Error",
+                                     "Invalid map coordinates (0,0). Check address data or geocoding service.");
+                return;
+            }
 
             // open map with both coordinates
             QString mapUrl = QString(
@@ -605,7 +697,16 @@ void DeliveryModule::handlePickup()
                                  ).arg(pickupLat).arg(pickupLng)
                                  .arg(dropLat).arg(dropLng);
 
-            QDesktopServices::openUrl(QUrl(mapUrl));
+            bool opened = QDesktopServices::openUrl(QUrl(mapUrl));
+            if (!opened) {
+                // WSL/Linux fallback: open in Windows default browser.
+                opened = QProcess::startDetached("cmd.exe", {"/C", "start", "", mapUrl});
+            }
+            if (!opened) {
+                QMessageBox::warning(this, "Open Map Failed",
+                                     QString("Could not open browser automatically.\nOpen this URL manually:\n%1")
+                                         .arg(mapUrl));
+            }
         });
     });
 }
