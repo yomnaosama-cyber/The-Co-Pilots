@@ -14,6 +14,13 @@
 #include <QListWidget>
 #include <QTextList>
 #include <QTextEdit>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDesktopServices>
+#include <QUrl>
 class DeliveryModulePrivate {
 public:
     QDialog *signUpDialog = nullptr;
@@ -522,7 +529,84 @@ void DeliveryModule::handleNotifications()
 
 void DeliveryModule::handlePickup()
 {
-    QMessageBox::information(this, "Pickup", 
-        "Pickup scheduling feature coming soon!");
+    if (d->currentDeliveryPersonId.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please login first!");
+        return;
+    }
+
+
+    QSqlQuery query;
+    query.prepare("SELECT aa1.address as pickup, aa2.address as drop "
+                  "FROM all_addresses aa1 "
+                  "INNER JOIN all_addresses aa2 ON aa1.matched_with_id = aa2.id "
+                  "WHERE aa1.assigned_to = :driver "
+                  "AND aa1.delivery_status = 'accepted'");
+    query.bindValue(":driver", d->currentDeliveryPersonId);
+
+    if (!query.exec() || !query.next()) {
+        QMessageBox::warning(this, "No Order",
+                             "You have no accepted orders yet!\nAccept a delivery first.");
+        return;
+    }
+
+    QString pickupAddress = query.value(0).toString();
+    QString dropAddress = query.value(1).toString();
+
+
+    QSqlQuery updateQuery;
+    updateQuery.prepare("UPDATE all_addresses SET "
+                        "delivery_status = 'on_way_to_pickup' "
+                        "WHERE assigned_to = :driver "
+                        "AND delivery_status = 'accepted'");
+    updateQuery.bindValue(":driver", d->currentDeliveryPersonId);
+    updateQuery.exec();
+
+    QNetworkAccessManager* manager = new QNetworkAccessManager(this);
+    QNetworkRequest request(QUrl("http://localhost:3000/geocode"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject pickupJson;
+    pickupJson["address"] = pickupAddress;
+    QByteArray pickupData = QJsonDocument(pickupJson).toJson();
+
+    QNetworkReply* pickupReply = manager->post(request, pickupData);
+
+    connect(pickupReply, &QNetworkReply::finished, [this, pickupReply,
+                                                    dropAddress, manager, request]() {
+
+        QByteArray pickupResponse = pickupReply->readAll();
+        QJsonObject pickupCoords = QJsonDocument::fromJson(pickupResponse).object();
+        pickupReply->deleteLater();
+
+        double pickupLat = pickupCoords["lat"].toDouble();
+        double pickupLng = pickupCoords["lng"].toDouble();
+
+        QJsonObject dropJson;
+        dropJson["address"] = dropAddress;
+        QByteArray dropData = QJsonDocument(dropJson).toJson();
+
+        QNetworkReply* dropReply = manager->post(request, dropData);
+
+        connect(dropReply, &QNetworkReply::finished, [this, dropReply,
+                                                      pickupLat, pickupLng]() {
+
+            QByteArray dropResponse = dropReply->readAll();
+            QJsonObject dropCoords = QJsonDocument::fromJson(dropResponse).object();
+            dropReply->deleteLater();
+
+            double dropLat = dropCoords["lat"].toDouble();
+            double dropLng = dropCoords["lng"].toDouble();
+
+            // open map with both coordinates
+            QString mapUrl = QString(
+                                 "http://localhost:8000/map.html"
+                                 "?pickupLat=%1&pickupLng=%2"
+                                 "&dropLat=%3&dropLng=%4"
+                                 ).arg(pickupLat).arg(pickupLng)
+                                 .arg(dropLat).arg(dropLng);
+
+            QDesktopServices::openUrl(QUrl(mapUrl));
+        });
+    });
 }
 

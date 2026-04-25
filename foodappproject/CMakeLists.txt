@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 1. Find Qt 6 and the SQL component
-find_package(Qt6 REQUIRED COMPONENTS Widgets Sql)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Sql Network)
 
 # 2. Add your source files
 set(PROJECT_SOURCES
@@ -38,6 +38,7 @@ qt_add_executable(foodappproject
 target_link_libraries(foodappproject PRIVATE
     Qt6::Widgets
     Qt6::Sql
+    Qt6::Network
 )
 
 # 5. Finalize the executable
