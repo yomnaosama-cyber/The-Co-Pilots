@@ -72,6 +72,7 @@ void handle(tcp::socket socket) {
 
         if (req.method() == http::verb::options) {
             http::response<http::string_body> res{http::status::ok, req.version()};
+            res.set(http::field::connection, "close");
             res.set(http::field::access_control_allow_origin, "*");
             res.set(http::field::access_control_allow_methods, "POST, OPTIONS");
             res.set(http::field::access_control_allow_headers, "Content-Type");
@@ -81,25 +82,38 @@ void handle(tcp::socket socket) {
         }
 
         std::string responseBody;
+        http::status status = http::status::ok;
 
         if (req.method() == http::verb::post && req.target() == "/order") {
-            auto data = json::parse(req.body());
-            std::cout << "Pickup: " << data["pickup"] << "\n";
-            std::cout << "Drop: " << data["drop"] << "\n";
-            responseBody = "{\"status\":\"ok\"}";
+            try {
+                auto data = json::parse(req.body());
+                std::cout << "Pickup: " << data["pickup"] << "\n";
+                std::cout << "Drop: " << data["drop"] << "\n";
+                responseBody = "{\"status\":\"ok\"}";
+            } catch (std::exception&) {
+                status = http::status::bad_request;
+                responseBody = "{\"error\":\"invalid JSON\"}";
+            }
 
         } else if (req.method() == http::verb::post && req.target() == "/geocode") {
-            auto data = json::parse(req.body());
-            std::string address = data["address"].get<std::string>();
-            std::cout << "Geocoding: " << address << "\n";
-            json result = geocodeAddress(address);
-            responseBody = result.dump();
+            try {
+                auto data = json::parse(req.body());
+                std::string address = data["address"].get<std::string>();
+                std::cout << "Geocoding: " << address << "\n";
+                json result = geocodeAddress(address);
+                responseBody = result.dump();
+            } catch (std::exception&) {
+                status = http::status::bad_request;
+                responseBody = "{\"error\":\"invalid JSON or missing address\"}";
+            }
 
         } else {
+            status = http::status::not_found;
             responseBody = "{\"error\":\"unknown endpoint\"}";
         }
 
-        http::response<http::string_body> res{http::status::ok, req.version()};
+        http::response<http::string_body> res{status, req.version()};
+        res.set(http::field::connection, "close");
         res.set(http::field::content_type, "application/json");
         res.set(http::field::access_control_allow_origin, "*");
         res.body() = responseBody;
@@ -109,6 +123,17 @@ void handle(tcp::socket socket) {
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
+        try {
+            http::response<http::string_body> res{http::status::internal_server_error, 11};
+            res.set(http::field::connection, "close");
+            res.set(http::field::content_type, "application/json");
+            res.set(http::field::access_control_allow_origin, "*");
+            res.body() = std::string("{\"error\":\"internal\",\"detail\":")
+                + json(e.what()).dump() + "}";
+            res.prepare_payload();
+            http::write(socket, res);
+            socket.shutdown(tcp::socket::shutdown_send);
+        } catch (...) {}
     }
 }
 
