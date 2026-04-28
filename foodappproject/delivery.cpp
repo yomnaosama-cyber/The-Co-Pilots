@@ -26,6 +26,7 @@
 #include <QWebEngineView>
 #include <QWebEngineSettings>
 #include <QWebEngineProfile>
+#include <QWebEnginePage>
 
 class DeliveryModulePrivate {
 public:
@@ -797,11 +798,16 @@ mapView->resize(1200, 800);
 mapView->settings()->setAttribute(
     QWebEngineSettings::JavascriptEnabled, true
 );
-mapView->page()->setFeaturePermission(
-    mapView->page()->url(),
-    QWebEnginePage::Geolocation,
-    QWebEnginePage::PermissionGrantedByUser
-);
+connect(mapView->page(), &QWebEnginePage::featurePermissionRequested,
+        mapView, [mapView](const QUrl& securityOrigin, QWebEnginePage::Feature feature) {
+    if (feature == QWebEnginePage::Geolocation) {
+        mapView->page()->setFeaturePermission(
+            securityOrigin,
+            feature,
+            QWebEnginePage::PermissionGrantedByUser
+            );
+    }
+});
 
 mapView->load(QUrl(mapUrl));
 mapView->show();        });
