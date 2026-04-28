@@ -407,18 +407,27 @@ void DeliveryModule::setupNotificationsDialog()
             QString providerName = item->data(Qt::UserRole + 2).toString();
             QString personName = item->data(Qt::UserRole + 3).toString();
             int matchScore = item->data(Qt::UserRole + 4).toInt();
+            int remainingNeeded = item->data(Qt::UserRole + 6).toInt();
+            int deliveredMeals = item->data(Qt::UserRole + 7).toInt();
+            int mealCount = item->data(Qt::UserRole + 8).toInt(); 
 
             d->deliveryDetailsText->setPlainText(
                 QString(" Pickup From: %1\n"
                         " Deliver To: %2\n"
                         " Provider: %3\n"
                         " Customer: %4\n"
-                        " Match Score: %5 common words")
+                        " Match Score: %5\n"
+                        " Meals Needed: %6\n"
+                        " Meals Already Received: %7\n"
+                        " Meals Still Needed: %8")
                     .arg(pickupLocation)
                     .arg(deliveryLocation)
                     .arg(providerName)
                     .arg(personName)
-                    .arg(matchScore));
+                    .arg(matchScore)
+                    .arg(mealCount)
+                    .arg(deliveredMeals)
+                    .arg(remainingNeeded));
         }
     });
 // once user accept the delievery order
@@ -492,15 +501,18 @@ void DeliveryModule::handleNotifications()
     // Get matching deliveries from all_addresses table
     d->matchingDeliveriesList->clear();
 
+
     QSqlQuery query;
     query.prepare("SELECT aa1.id, aa1.address as pickup, aa2.address as delivery, "
-                  "aa2.provider_name, aa1.person_name, aa1.match_score "
+                  "aa2.provider_name, aa1.person_name, aa1.match_score, "
+                  "mr.meal_count, mr.delivered_meals "
                   "FROM all_addresses aa1 "
                   "INNER JOIN all_addresses aa2 ON aa1.matched_with_id = aa2.id "
+                  "INNER JOIN meal_requests mr ON mr.person_id = aa1.source_id "
                   "WHERE aa1.source_type = 'meal_request' "
                   "AND aa2.source_type = 'donation' "
                   "AND aa1.match_status = 'matched' "
-                   "AND aa1.delivery_status = 'pending' "
+                  "AND aa1.delivery_status = 'pending' "
                   "ORDER BY aa1.match_score DESC");
 // Loop through all returned rows from database
     if (!query.exec()) {
@@ -517,9 +529,15 @@ void DeliveryModule::handleNotifications()
         QString providerName = query.value(3).toString();
         QString personName = query.value(4).toString();
         int matchScore = query.value(5).toInt();
-
-        QString displayText = QString(" %1 meals from '%2' → '%3' (Score: %4)")
+        int mealCount = query.value(6).toInt();           
+        int deliveredMeals = query.value(7).toInt();      
+        int remainingNeeded = mealCount - deliveredMeals;  
+        
+        QString displayText = QString("%1 needs %2 more meals (Total: %3, Received: %4) from '%5' → '%6' (Score: %7)")
                                   .arg(personName)
+                                  .arg(remainingNeeded)
+                                  .arg(mealCount)
+                                  .arg(deliveredMeals)
                                   .arg(pickupLocation.length() > 20 ? pickupLocation.left(20) + "..." : pickupLocation)
                                   .arg(deliveryLocation.length() > 20 ? deliveryLocation.left(20) + "..." : deliveryLocation)
                                   .arg(matchScore);
@@ -531,6 +549,9 @@ void DeliveryModule::handleNotifications()
         item->setData(Qt::UserRole + 3, personName);
         item->setData(Qt::UserRole + 4, matchScore);
         item->setData(Qt::UserRole + 5, deliveryId);
+        item->setData(Qt::UserRole + 6, remainingNeeded);
+        item->setData(Qt::UserRole + 7, deliveredMeals);
+        item->setData(Qt::UserRole + 8, mealCount);
 
         d->matchingDeliveriesList->addItem(item);
         matchCount++;// increase every loop to know how much math count is there
