@@ -22,6 +22,8 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QProcess>
+#include <QSettings>
+
 class DeliveryModulePrivate {
 public:
     QDialog *signUpDialog = nullptr;
@@ -122,6 +124,8 @@ void DeliveryModule::setupUI()
     connect(loginBtn, &QPushButton::clicked, [this]() {
         d->loginDialog->exec();
     });
+
+    addLogoutButton();
 }
 // opens when we press sign up
 void DeliveryModule::setupSignUpDialog()
@@ -257,7 +261,7 @@ void DeliveryModule::setupSignUpDialog()
                                          .arg(d->nameField->text())
                                          .arg(d->personalIdField->text()));
 
-            d->signUpDialog->close();
+            saveLoginState();
 
             d->nameField->clear();
             d->nationalIdField->clear();
@@ -265,7 +269,6 @@ void DeliveryModule::setupSignUpDialog()
             d->ageField->clear();
             d->cityField->clear();
             d->vehicleField->clear();
-
 
             d->signUpDialog->close();
         }
@@ -322,6 +325,7 @@ void DeliveryModule::setupLoginDialog()
             QMessageBox::information(d->loginDialog, "Welcome",
                                      "Welcome back, " + name + "!");
 
+            saveLoginState();
             d->loginDialog->close();
 
 
@@ -541,8 +545,71 @@ void DeliveryModule::handleNotifications()
     d->notificationsDialog->exec();
 }
 
+void DeliveryModule::addLogoutButton()
+{
+    // Find the central widget's layout to add logout button
+    QWidget* central = this->centralWidget();
+    if (!central) return;
+    
+    QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(central->layout());
+    if (!mainLayout) return;
+    
+    QPushButton* logoutBtn = new QPushButton("Logout & Switch Account");
+    logoutBtn->setCursor(Qt::PointingHandCursor);
+    logoutBtn->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #d4a373;"
+        "   border: 2px solid #813e15;"
+        "   border-radius: 28px;"
+        "   padding: 10px;"
+        "   font-size: 14px;"
+        "   font-weight: bold;"
+        "   color: #ffffff;"
+        "   margin-top: 20px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #ba6c3b;"
+        "}"
+    );
+    
+    mainLayout->addWidget(logoutBtn);
+    connect(logoutBtn, &QPushButton::clicked, this, &DeliveryModule::handleLogout);
+}
 
+void DeliveryModule::handleLogout()
+{
+    QSettings settings;
+    settings.remove("lastModule");
+    settings.remove("lastModuleData");
+    
+    // Clear current session data
+    d->currentDeliveryPersonId.clear();
+    d->currentDeliveryPersonName.clear();
+    d->lastAcceptedDeliveryId = -1;
+    
+    QMessageBox::information(this, "Logged Out", "You have been logged out successfully.");
+    
+    // Close current window and show main window
+    this->close();
+    
+    // Find and show main window
+    QWidget* parent = this->parentWidget();
+    while (parent && !parent->isWindow()) {
+        parent = parent->parentWidget();
+    }
+    if (parent) {
+        parent->show();
+    }
+}
 
+void DeliveryModule::saveLoginState()
+{
+    if (!d->currentDeliveryPersonId.isEmpty()) {
+        QSettings settings;
+        settings.setValue("lastModule", "delivery");
+        settings.setValue("lastModuleData", d->currentDeliveryPersonId);
+    }
+}
 
 void DeliveryModule::handlePickup()
 {

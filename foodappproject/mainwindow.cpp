@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QFont>
 #include <QApplication>
+#include <QSettings>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -64,47 +65,66 @@ void MainWindow::setupUI()
     btnLayout->setAlignment(Qt::AlignCenter);
     btnLayout->setSpacing(30);
 
-    QString buttonStyle = 
+    QString buttonStyle =
         "QPushButton {"
         "   background-color: #f4ece7;"
         "   border: 2px solid #813e15;"
         "   border-radius: 28px;"
-        "   padding: 15px;"
-        "   font-size: 18px;"
-        "   font-weight: bold;"
-        "   color: #ba6c3b;"
-        "   text-align: center;"
+        "   padding: 0px;"
+        "   text-align: left;"
         "}"
         "QPushButton:hover {"
         "   background-color: #e8cebe;"
         "   border-color: #4b240c;"
         "}";
 
+    auto createMainCardButton = [&](const QString& title, const QString& description) {
+        QPushButton* cardBtn = new QPushButton();
+        cardBtn->setFixedSize(250, 300);
+        cardBtn->setCursor(Qt::PointingHandCursor);
+        cardBtn->setStyleSheet(buttonStyle);
+
+        QVBoxLayout* cardLayout = new QVBoxLayout(cardBtn);
+        cardLayout->setContentsMargins(20, 20, 20, 20);
+        cardLayout->setSpacing(8);
+        cardLayout->setAlignment(Qt::AlignCenter);
+
+        QLabel* titleLabel = new QLabel(title, cardBtn);
+        titleLabel->setWordWrap(true);
+        titleLabel->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+        titleLabel->setStyleSheet("color: #813e15; font-size: 27px; font-weight: 800; background: transparent;");
+
+        QLabel* descLabel = new QLabel(description, cardBtn);
+        descLabel->setWordWrap(true);
+        descLabel->setAlignment(Qt::AlignCenter | Qt::AlignHCenter);
+        descLabel->setStyleSheet("color: #4b240c; font-size: 20px; font-weight: 500; background: transparent;");
+
+        cardLayout->addWidget(titleLabel);
+        cardLayout->addWidget(descLabel);
+        cardLayout->addStretch();
+
+        return cardBtn;
+    };
+
     // Delivery Button
-    QPushButton* deliveryBtn = new QPushButton(
-        "\n\nDelivery\n\n\n\nClick here if you\ncan offer delivery\nservices"
+    QPushButton* deliveryBtn = createMainCardButton(
+        "\nDelivery System",
+        "\n\nClick here if you can offer delivery services"
     );
-    deliveryBtn->setFixedSize(250, 300);
-    deliveryBtn->setCursor(Qt::PointingHandCursor);
-    deliveryBtn->setStyleSheet(buttonStyle);
     connect(deliveryBtn, &QPushButton::clicked, this, &MainWindow::onDeliveryClicked);
 
     // Organizations Button
-    QPushButton* organizationsBtn = new QPushButton(
-        "\nOrganizations\nand\nrestaurants\nShare your surplus\nfood with the\ncommunity and\nminimize your\nenvironmental impact."
+    QPushButton* organizationsBtn = createMainCardButton(
+        "\nOrganizations & Restaurants",
+        "\nShare your surplus food with the community"
     );
-    organizationsBtn->setFixedSize(250, 300);
-    organizationsBtn->setCursor(Qt::PointingHandCursor);
-    organizationsBtn->setStyleSheet(buttonStyle);
     connect(organizationsBtn, &QPushButton::clicked, this, &MainWindow::onOrganizationsClicked);
 
     // People Button
-    QPushButton* peopleBtn = new QPushButton(
-        "\n\nPeople in Need\n\n\n\nRequest meals and\nassistance if you\nneed help"
+    QPushButton* peopleBtn = createMainCardButton(
+        "\nPeople in Need",
+        "\n\nRequest meals and assistance if you need help"
     );
-    peopleBtn->setFixedSize(250, 300);
-    peopleBtn->setCursor(Qt::PointingHandCursor);
-    peopleBtn->setStyleSheet(buttonStyle);
     connect(peopleBtn, &QPushButton::clicked, this, &MainWindow::onPeopleClicked);
 
     btnLayout->addWidget(deliveryBtn);
@@ -125,6 +145,39 @@ void MainWindow::setupUI()
     deliveryModule = new DeliveryModule(this);
     peopleModule = new PeopleModule(this);
     orgModule = new OrgModule(this);
+}
+
+void MainWindow::showModuleDirectly(const QString& module, const QString& moduleData)
+{
+    if (module == "delivery") {
+        if (deliveryModule) {
+            deliveryModule->show();
+            deliveryModule->raise();
+            deliveryModule->activateWindow();
+        }
+    } else if (module == "organizations") {
+        if (orgModule) {
+            // For organizations, we might need to restore specific data
+            if (!moduleData.isEmpty()) {
+                orgModule->restoreFromData(moduleData);
+            }
+            orgModule->exec();
+        }
+    } else if (module == "people") {
+        if (peopleModule) {
+            peopleModule->show();
+            peopleModule->raise();
+            peopleModule->activateWindow();
+        }
+    }
+    this->hide(); // Hide main window
+}
+
+void MainWindow::clearSavedModule()
+{
+    QSettings settings;
+    settings.remove("lastModule");
+    settings.remove("lastModuleData");
 }
 
 void MainWindow::onDeliveryClicked()

@@ -13,6 +13,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QFont>
+#include <QSettings>
 
 class OrgModulePrivate {
 public:
@@ -108,6 +109,8 @@ void OrgModule::setupUI()
     connect(restaurantBtn, &QPushButton::clicked, this, &OrgModule::onRestaurantTab);
     connect(organizationBtn, &QPushButton::clicked, this, &OrgModule::onOrganizationTab);
     connect(donateBtn, &QPushButton::clicked, this, &OrgModule::onDonationTab);
+
+    addLogoutButton();
 }
 
 void OrgModule::setupRestaurantPage()
@@ -260,6 +263,7 @@ void OrgModule::submitRestaurant()
 
     if (query.exec()) {
         QMessageBox::information(this, "Success", "Restaurant registered successfully.");
+        saveOrganizationState(d->resName->text().trimmed());
         d->resName->clear();
         d->resCity->clear();
         d->resStreet->clear();
@@ -295,6 +299,7 @@ void OrgModule::submitOrganization()
 
     if (query.exec()) {
         QMessageBox::information(this, "Success", "Organization registered successfully.");
+        saveOrganizationState(d->orgName->text().trimmed());
         d->orgName->clear();
         d->orgCity->clear();
         d->orgStreet->clear();
@@ -385,3 +390,61 @@ void OrgModule::submitDonation()
     }
 }
 
+void OrgModule::addLogoutButton()
+{
+    QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(this->layout());
+    if (!mainLayout) return;
+    
+    QPushButton* logoutBtn = new QPushButton("Logout & Switch Account");
+    logoutBtn->setCursor(Qt::PointingHandCursor);
+    logoutBtn->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #d4a373;"
+        "   border: 2px solid #813e15;"
+        "   border-radius: 28px;"
+        "   padding: 10px;"
+        "   font-size: 14px;"
+        "   font-weight: bold;"
+        "   color: #ffffff;"
+        "   margin-top: 20px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #ba6c3b;"
+        "}"
+    );
+    
+    mainLayout->addWidget(logoutBtn);
+    connect(logoutBtn, &QPushButton::clicked, this, &OrgModule::handleLogout);
+}
+
+void OrgModule::handleLogout()
+{
+    QSettings settings;
+    settings.remove("lastModule");
+    settings.remove("lastModuleData");
+    
+    QMessageBox::information(this, "Logged Out", "You have been logged out successfully.");
+    this->close();
+    
+    QWidget* parent = this->parentWidget();
+    while (parent && !parent->isWindow()) {
+        parent = parent->parentWidget();
+    }
+    if (parent) {
+        parent->show();
+    }
+}
+
+void OrgModule::restoreFromData(const QString& data)
+{
+    // For organizations, you might want to restore which tab was last used
+    // This is a placeholder - implement based on your needs
+    Q_UNUSED(data);
+}
+
+void OrgModule::saveOrganizationState(const QString& orgName)
+{
+    QSettings settings;
+    settings.setValue("lastModule", "organizations");
+    settings.setValue("lastModuleData", orgName);
+}

@@ -10,10 +10,12 @@ class PeopleModule : public QMainWindow {
 public:
     PeopleModule(QWidget *parent = nullptr);
     ~PeopleModule();
+    void savePersonState(const QString& personId);
 
 private slots:
     void handleSignUp();
     void handleMealRequest();
+    void handleLogout();
 
 private:
     void setupUI();
@@ -21,6 +23,7 @@ private:
     void setupMealRequestDialog();
     void submitSignUp();
     void submitMealRequest();
+    void addLogoutButton();
     
     // Pimpl pattern for encapsulation
     class PeopleModulePrivate *d;

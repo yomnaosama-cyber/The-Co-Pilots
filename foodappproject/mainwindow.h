@@ -14,6 +14,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    void showModuleDirectly(const QString& module, const QString& moduleData);
+    void clearSavedModule(); 
 
 private slots:
     void onDeliveryClicked();
