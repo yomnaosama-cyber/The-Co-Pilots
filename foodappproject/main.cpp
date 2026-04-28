@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 
     // Create and show main window
     MainWindow window;
-    
+
     if (!lastModule.isEmpty()) {
         window.showModuleDirectly(lastModule, lastModuleData);
     } else {
