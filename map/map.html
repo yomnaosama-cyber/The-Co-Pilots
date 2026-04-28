@@ -20,6 +20,20 @@
       font-weight: bold;
       border: 2px solid #813e15;
       color: #813e15;
+      max-width: 90vw;
+      text-align: center;
+    }
+    #attrib {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      z-index: 1000;
+      font-size: 11px;
+      color: #333;
+      background: rgba(255,255,255,0.85);
+      padding: 6px 10px;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -27,63 +41,85 @@
 <body>
 <div id="status">Loading delivery route...</div>
 <div id="map"></div>
+<div id="attrib">Route: OSRM demo · Tiles: &copy; OpenStreetMap</div>
 
 <script>
-  // read coordinates from URL
   const params = new URLSearchParams(window.location.search);
   const pickupLat = parseFloat(params.get('pickupLat'));
   const pickupLng = parseFloat(params.get('pickupLng'));
   const dropLat   = parseFloat(params.get('dropLat'));
   const dropLng   = parseFloat(params.get('dropLng'));
 
-  // check if coordinates exist
-  if (isNaN(pickupLat) || isNaN(dropLat)) {
-    document.getElementById('status').textContent = 
-      '❌ No delivery loaded';
-  } else {
+  const statusEl = document.getElementById('status');
 
-    // center map between pickup and drop
+  if (isNaN(pickupLat) || isNaN(pickupLng) || isNaN(dropLat) || isNaN(dropLng)) {
+    statusEl.textContent = '❌ No delivery loaded';
+  } else {
     const centerLat = (pickupLat + dropLat) / 2;
     const centerLng = (pickupLng + dropLng) / 2;
 
-    var map = L.map('map').setView([centerLat, centerLng], 13);
+    const map = L.map('map').setView([centerLat, centerLng], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // green pickup marker
-    var pickupMarker = L.marker([pickupLat, pickupLng], {
+    L.marker([pickupLat, pickupLng], {
       icon: L.divIcon({
         className: '',
         html: '<div style="background:green; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>'
       })
     }).addTo(map)
-      .bindPopup("📦 Pickup Location")
+      .bindPopup('📦 Pickup Location')
       .openPopup();
 
-    // red drop marker
-    var dropMarker = L.marker([dropLat, dropLng], {
+    L.marker([dropLat, dropLng], {
       icon: L.divIcon({
         className: '',
         html: '<div style="background:red; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>'
       })
     }).addTo(map)
-      .bindPopup("🏠 Drop Location");
+      .bindPopup('🏠 Drop Location');
 
-    // dashed line between pickup and drop
-    L.polyline([
-      [pickupLat, pickupLng],
-      [dropLat, dropLng]
-    ], {
-      color: '#813e15', 
-      weight: 3, 
-      dashArray: '10, 10'
-    }).addTo(map);
+    function drawStraightFallback() {
+      const line = L.polyline(
+        [[pickupLat, pickupLng], [dropLat, dropLng]],
+        { color: '#813e15', weight: 3, dashArray: '10, 10' }
+      ).addTo(map);
+      map.fitBounds(line.getBounds().pad(0.15));
+      statusEl.textContent = 'Road route unavailable — straight line shown';
+    }
 
-    // update status bar
-    document.getElementById('status').textContent = 
-      '🚗 On way to pickup';
+    const osrmUrl = 'https://router.project-osrm.org/route/v1/driving/'
+      + pickupLng + ',' + pickupLat + ';' + dropLng + ',' + dropLat
+      + '?overview=full&geometries=geojson';
+
+    statusEl.textContent = 'Loading road route…';
+
+    fetch(osrmUrl)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.code !== 'Ok' || !data.routes || !data.routes[0] || !data.routes[0].geometry) {
+          throw new Error(data.message || data.code || 'No route');
+        }
+        const coords = data.routes[0].geometry.coordinates.map(function (c) {
+          return [c[1], c[0]];
+        });
+        const route = L.polyline(coords, {
+          color: '#813e15',
+          weight: 5,
+          opacity: 0.92
+        }).addTo(map);
+        map.fitBounds(route.getBounds().pad(0.12));
+
+        const km = (data.routes[0].distance / 1000).toFixed(1);
+        const min = Math.round(data.routes[0].duration / 60);
+        statusEl.textContent = '🚗 ~' + km + ' km · ~' + min + ' min (driving)';
+      })
+      .catch(function (err) {
+        console.warn('OSRM route failed:', err);
+        drawStraightFallback();
+      });
   }
 </script>
 </body>
