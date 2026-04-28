@@ -69,8 +69,9 @@ include CMakeFiles/foodappproject_autogen.dir/progress.make
 CMakeFiles/foodappproject_autogen: foodappproject_autogen/timestamp
 
 foodappproject_autogen/timestamp: /usr/lib/qt6/libexec/moc
+foodappproject_autogen/timestamp: /usr/lib/qt6/libexec/uic
 foodappproject_autogen/timestamp: CMakeFiles/foodappproject_autogen.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC for target foodappproject"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC and UIC for target foodappproject"
 	/usr/bin/cmake -E cmake_autogen /home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles/foodappproject_autogen.dir/AutogenInfo.json ""
 	/usr/bin/cmake -E touch /home/microsoftmalak/The-Co-Pilots/foodappproject/build/foodappproject_autogen/timestamp
 

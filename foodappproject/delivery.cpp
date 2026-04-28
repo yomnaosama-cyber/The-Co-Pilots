@@ -23,6 +23,9 @@
 #include <QUrl>
 #include <QProcess>
 #include <QSettings>
+#include <QWebEngineView>
+#include <QWebEngineSettings>
+#include <QWebEngineProfile>
 
 class DeliveryModulePrivate {
 public:
@@ -785,17 +788,23 @@ void DeliveryModule::handlePickup()
                                  ).arg(pickupLat).arg(pickupLng)
                                  .arg(dropLat).arg(dropLng);
 
-            bool opened = QDesktopServices::openUrl(QUrl(mapUrl));
-            if (!opened) {
-                // WSL/Linux fallback: open in Windows default browser.
-                opened = QProcess::startDetached("cmd.exe", {"/C", "start", "", mapUrl});
-            }
-            if (!opened) {
-                QMessageBox::warning(this, "Open Map Failed",
-                                     QString("Could not open browser automatically.\nOpen this URL manually:\n%1")
-                                         .arg(mapUrl));
-            }
-        });
+            
+QWebEngineView* mapView = new QWebEngineView();
+mapView->setWindowTitle("Delivery Map");
+mapView->resize(1200, 800);
+
+// ✅ enable GPS permission
+mapView->settings()->setAttribute(
+    QWebEngineSettings::JavascriptEnabled, true
+);
+mapView->page()->setFeaturePermission(
+    mapView->page()->url(),
+    QWebEnginePage::Geolocation,
+    QWebEnginePage::PermissionGrantedByUser
+);
+
+mapView->load(QUrl(mapUrl));
+mapView->show();        });
     });
 }
 

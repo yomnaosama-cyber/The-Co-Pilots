@@ -130,6 +130,19 @@ foodappproject/fast:
 .PHONY : foodappproject/fast
 
 #=============================================================================
+# Target rules for targets named foodappproject_qmlimportscan
+
+# Build rule for target.
+foodappproject_qmlimportscan: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 foodappproject_qmlimportscan
+.PHONY : foodappproject_qmlimportscan
+
+# fast build rule for target.
+foodappproject_qmlimportscan/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject_qmlimportscan.dir/build.make CMakeFiles/foodappproject_qmlimportscan.dir/build
+.PHONY : foodappproject_qmlimportscan/fast
+
+#=============================================================================
 # Target rules for targets named foodappproject_autogen_timestamp_deps
 
 # Build rule for target.
@@ -154,6 +167,30 @@ foodappproject_autogen: cmake_check_build_system
 foodappproject_autogen/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject_autogen.dir/build.make CMakeFiles/foodappproject_autogen.dir/build
 .PHONY : foodappproject_autogen/fast
+
+database.o: database.cpp.o
+.PHONY : database.o
+
+# target to build an object file
+database.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject.dir/build.make CMakeFiles/foodappproject.dir/database.cpp.o
+.PHONY : database.cpp.o
+
+database.i: database.cpp.i
+.PHONY : database.i
+
+# target to preprocess a source file
+database.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject.dir/build.make CMakeFiles/foodappproject.dir/database.cpp.i
+.PHONY : database.cpp.i
+
+database.s: database.cpp.s
+.PHONY : database.s
+
+# target to generate assembly for a file
+database.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject.dir/build.make CMakeFiles/foodappproject.dir/database.cpp.s
+.PHONY : database.cpp.s
 
 delivery.o: delivery.cpp.o
 .PHONY : delivery.o
@@ -227,6 +264,30 @@ main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject.dir/build.make CMakeFiles/foodappproject.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+mainwindow.o: mainwindow.cpp.o
+.PHONY : mainwindow.o
+
+# target to build an object file
+mainwindow.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject.dir/build.make CMakeFiles/foodappproject.dir/mainwindow.cpp.o
+.PHONY : mainwindow.cpp.o
+
+mainwindow.i: mainwindow.cpp.i
+.PHONY : mainwindow.i
+
+# target to preprocess a source file
+mainwindow.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject.dir/build.make CMakeFiles/foodappproject.dir/mainwindow.cpp.i
+.PHONY : mainwindow.cpp.i
+
+mainwindow.s: mainwindow.cpp.s
+.PHONY : mainwindow.s
+
+# target to generate assembly for a file
+mainwindow.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/foodappproject.dir/build.make CMakeFiles/foodappproject.dir/mainwindow.cpp.s
+.PHONY : mainwindow.cpp.s
+
 org.o: org.cpp.o
 .PHONY : org.o
 
@@ -285,7 +346,11 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... foodappproject_autogen"
 	@echo "... foodappproject_autogen_timestamp_deps"
+	@echo "... foodappproject_qmlimportscan"
 	@echo "... foodappproject"
+	@echo "... database.o"
+	@echo "... database.i"
+	@echo "... database.s"
 	@echo "... delivery.o"
 	@echo "... delivery.i"
 	@echo "... delivery.s"
@@ -295,6 +360,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... mainwindow.o"
+	@echo "... mainwindow.i"
+	@echo "... mainwindow.s"
 	@echo "... org.o"
 	@echo "... org.i"
 	@echo "... org.s"

@@ -9,9 +9,11 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "" "foodappproject_autogen/timestamp" "custom" "foodappproject_autogen/deps"
+  "/home/microsoftmalak/The-Co-Pilots/foodappproject/database.cpp" "CMakeFiles/foodappproject.dir/database.cpp.o" "gcc" "CMakeFiles/foodappproject.dir/database.cpp.o.d"
   "/home/microsoftmalak/The-Co-Pilots/foodappproject/delivery.cpp" "CMakeFiles/foodappproject.dir/delivery.cpp.o" "gcc" "CMakeFiles/foodappproject.dir/delivery.cpp.o.d"
   "/home/microsoftmalak/The-Co-Pilots/foodappproject/build/foodappproject_autogen/mocs_compilation.cpp" "CMakeFiles/foodappproject.dir/foodappproject_autogen/mocs_compilation.cpp.o" "gcc" "CMakeFiles/foodappproject.dir/foodappproject_autogen/mocs_compilation.cpp.o.d"
   "/home/microsoftmalak/The-Co-Pilots/foodappproject/main.cpp" "CMakeFiles/foodappproject.dir/main.cpp.o" "gcc" "CMakeFiles/foodappproject.dir/main.cpp.o.d"
+  "/home/microsoftmalak/The-Co-Pilots/foodappproject/mainwindow.cpp" "CMakeFiles/foodappproject.dir/mainwindow.cpp.o" "gcc" "CMakeFiles/foodappproject.dir/mainwindow.cpp.o.d"
   "/home/microsoftmalak/The-Co-Pilots/foodappproject/org.cpp" "CMakeFiles/foodappproject.dir/org.cpp.o" "gcc" "CMakeFiles/foodappproject.dir/org.cpp.o.d"
   "/home/microsoftmalak/The-Co-Pilots/foodappproject/people.cpp" "CMakeFiles/foodappproject.dir/people.cpp.o" "gcc" "CMakeFiles/foodappproject.dir/people.cpp.o.d"
   )
