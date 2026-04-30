@@ -18,15 +18,18 @@ class DeliveryModule : public QMainWindow {
 public:
     DeliveryModule(QWidget *parent = nullptr);
     ~DeliveryModule();
+    void saveLoginState();
 private slots:
     void handleSignUp();
     void handleNotifications();
     void handlePickup();
+    void handleLogout();
 private:
     void setupUI();
     void setupSignUpDialog();
     void setupNotificationsDialog();
     void setupLoginDialog();
+    void addLogoutButton();
     class DeliveryModulePrivate *d;
 };
 #endif

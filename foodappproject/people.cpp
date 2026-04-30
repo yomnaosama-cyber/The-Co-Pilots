@@ -12,6 +12,7 @@
 #include <QSqlError>
 #include <QFont>
 #include <QDebug>
+#include <QSettings>
 
 class PeopleModulePrivate {
 public:
@@ -109,6 +110,8 @@ void PeopleModule::setupUI()
 
     connect(signupBtn, &QPushButton::clicked, this, &PeopleModule::handleSignUp);
     connect(requestBtn, &QPushButton::clicked, this, &PeopleModule::handleMealRequest);
+
+    addLogoutButton();
 }
 
 void PeopleModule::setupSignUpDialog()
@@ -295,6 +298,7 @@ void PeopleModule::submitSignUp()
 
     if (query.exec()) {
         QMessageBox::information(this, "Success", "You have signed up successfully.");
+        savePersonState(d->peopleid->text().trimmed());
         d->peoplename->clear();
         d->peopleid->clear();
         d->peopleaddress1->clear();
@@ -379,4 +383,59 @@ void PeopleModule::submitMealRequest()
         QMessageBox::critical(this, "Database Error",
                               "Error: " + insertQuery.lastError().text());
     }
+}
+
+void PeopleModule::addLogoutButton()
+{
+    QWidget* central = this->centralWidget();
+    if (!central) return;
+    
+    QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(central->layout());
+    if (!mainLayout) return;
+    
+    QPushButton* logoutBtn = new QPushButton("Logout & Switch Account");
+    logoutBtn->setCursor(Qt::PointingHandCursor);
+    logoutBtn->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #d4a373;"
+        "   border: 2px solid #813e15;"
+        "   border-radius: 28px;"
+        "   padding: 10px;"
+        "   font-size: 14px;"
+        "   font-weight: bold;"
+        "   color: #ffffff;"
+        "   margin-top: 20px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #ba6c3b;"
+        "}"
+    );
+    
+    mainLayout->addWidget(logoutBtn);
+    connect(logoutBtn, &QPushButton::clicked, this, &PeopleModule::handleLogout);
+}
+
+void PeopleModule::handleLogout()
+{
+    QSettings settings;
+    settings.remove("lastModule");
+    settings.remove("lastModuleData");
+    
+    QMessageBox::information(this, "Logged Out", "You have been logged out successfully.");
+    this->close();
+    
+    QWidget* parent = this->parentWidget();
+    while (parent && !parent->isWindow()) {
+        parent = parent->parentWidget();
+    }
+    if (parent) {
+        parent->show();
+    }
+}
+
+void PeopleModule::savePersonState(const QString& personId)
+{
+    QSettings settings;
+    settings.setValue("lastModule", "people");
+    settings.setValue("lastModuleData", personId);
 }

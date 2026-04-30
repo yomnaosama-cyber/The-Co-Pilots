@@ -22,6 +22,12 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QProcess>
+#include <QSettings>
+#include <QWebEngineView>
+#include <QWebEngineSettings>
+#include <QWebEngineProfile>
+#include <QWebEnginePage>
+
 class DeliveryModulePrivate {
 public:
     QDialog *signUpDialog = nullptr;
@@ -122,6 +128,8 @@ void DeliveryModule::setupUI()
     connect(loginBtn, &QPushButton::clicked, [this]() {
         d->loginDialog->exec();
     });
+
+    addLogoutButton();
 }
 // opens when we press sign up
 void DeliveryModule::setupSignUpDialog()
@@ -257,7 +265,7 @@ void DeliveryModule::setupSignUpDialog()
                                          .arg(d->nameField->text())
                                          .arg(d->personalIdField->text()));
 
-            d->signUpDialog->close();
+            saveLoginState();
 
             d->nameField->clear();
             d->nationalIdField->clear();
@@ -265,7 +273,6 @@ void DeliveryModule::setupSignUpDialog()
             d->ageField->clear();
             d->cityField->clear();
             d->vehicleField->clear();
-
 
             d->signUpDialog->close();
         }
@@ -322,6 +329,7 @@ void DeliveryModule::setupLoginDialog()
             QMessageBox::information(d->loginDialog, "Welcome",
                                      "Welcome back, " + name + "!");
 
+            saveLoginState();
             d->loginDialog->close();
 
 
@@ -403,18 +411,27 @@ void DeliveryModule::setupNotificationsDialog()
             QString providerName = item->data(Qt::UserRole + 2).toString();
             QString personName = item->data(Qt::UserRole + 3).toString();
             int matchScore = item->data(Qt::UserRole + 4).toInt();
+            int remainingNeeded = item->data(Qt::UserRole + 6).toInt();
+            int deliveredMeals = item->data(Qt::UserRole + 7).toInt();
+            int mealCount = item->data(Qt::UserRole + 8).toInt(); 
 
             d->deliveryDetailsText->setPlainText(
                 QString(" Pickup From: %1\n"
                         " Deliver To: %2\n"
                         " Provider: %3\n"
                         " Customer: %4\n"
-                        " Match Score: %5 common words")
+                        " Match Score: %5\n"
+                        " Meals Needed: %6\n"
+                        " Meals Already Received: %7\n"
+                        " Meals Still Needed: %8")
                     .arg(pickupLocation)
                     .arg(deliveryLocation)
                     .arg(providerName)
                     .arg(personName)
-                    .arg(matchScore));
+                    .arg(matchScore)
+                    .arg(mealCount)
+                    .arg(deliveredMeals)
+                    .arg(remainingNeeded));
         }
     });
 // once user accept the delievery order
@@ -488,15 +505,18 @@ void DeliveryModule::handleNotifications()
     // Get matching deliveries from all_addresses table
     d->matchingDeliveriesList->clear();
 
+
     QSqlQuery query;
     query.prepare("SELECT aa1.id, aa1.address as pickup, aa2.address as delivery, "
-                  "aa2.provider_name, aa1.person_name, aa1.match_score "
+                  "aa2.provider_name, aa1.person_name, aa1.match_score, "
+                  "mr.meal_count, mr.delivered_meals "
                   "FROM all_addresses aa1 "
                   "INNER JOIN all_addresses aa2 ON aa1.matched_with_id = aa2.id "
+                  "INNER JOIN meal_requests mr ON mr.person_id = aa1.source_id "
                   "WHERE aa1.source_type = 'meal_request' "
                   "AND aa2.source_type = 'donation' "
                   "AND aa1.match_status = 'matched' "
-                   "AND aa1.delivery_status = 'pending' "
+                  "AND aa1.delivery_status = 'pending' "
                   "ORDER BY aa1.match_score DESC");
 // Loop through all returned rows from database
     if (!query.exec()) {
@@ -513,9 +533,15 @@ void DeliveryModule::handleNotifications()
         QString providerName = query.value(3).toString();
         QString personName = query.value(4).toString();
         int matchScore = query.value(5).toInt();
-
-        QString displayText = QString(" %1 meals from '%2' → '%3' (Score: %4)")
+        int mealCount = query.value(6).toInt();           
+        int deliveredMeals = query.value(7).toInt();      
+        int remainingNeeded = mealCount - deliveredMeals;  
+        
+        QString displayText = QString("%1 needs %2 more meals (Total: %3, Received: %4) from '%5' → '%6' (Score: %7)")
                                   .arg(personName)
+                                  .arg(remainingNeeded)
+                                  .arg(mealCount)
+                                  .arg(deliveredMeals)
                                   .arg(pickupLocation.length() > 20 ? pickupLocation.left(20) + "..." : pickupLocation)
                                   .arg(deliveryLocation.length() > 20 ? deliveryLocation.left(20) + "..." : deliveryLocation)
                                   .arg(matchScore);
@@ -527,6 +553,9 @@ void DeliveryModule::handleNotifications()
         item->setData(Qt::UserRole + 3, personName);
         item->setData(Qt::UserRole + 4, matchScore);
         item->setData(Qt::UserRole + 5, deliveryId);
+        item->setData(Qt::UserRole + 6, remainingNeeded);
+        item->setData(Qt::UserRole + 7, deliveredMeals);
+        item->setData(Qt::UserRole + 8, mealCount);
 
         d->matchingDeliveriesList->addItem(item);
         matchCount++;// increase every loop to know how much math count is there
@@ -541,8 +570,71 @@ void DeliveryModule::handleNotifications()
     d->notificationsDialog->exec();
 }
 
+void DeliveryModule::addLogoutButton()
+{
+    // Find the central widget's layout to add logout button
+    QWidget* central = this->centralWidget();
+    if (!central) return;
+    
+    QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(central->layout());
+    if (!mainLayout) return;
+    
+    QPushButton* logoutBtn = new QPushButton("Logout & Switch Account");
+    logoutBtn->setCursor(Qt::PointingHandCursor);
+    logoutBtn->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #d4a373;"
+        "   border: 2px solid #813e15;"
+        "   border-radius: 28px;"
+        "   padding: 10px;"
+        "   font-size: 14px;"
+        "   font-weight: bold;"
+        "   color: #ffffff;"
+        "   margin-top: 20px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #ba6c3b;"
+        "}"
+    );
+    
+    mainLayout->addWidget(logoutBtn);
+    connect(logoutBtn, &QPushButton::clicked, this, &DeliveryModule::handleLogout);
+}
 
+void DeliveryModule::handleLogout()
+{
+    QSettings settings;
+    settings.remove("lastModule");
+    settings.remove("lastModuleData");
+    
+    // Clear current session data
+    d->currentDeliveryPersonId.clear();
+    d->currentDeliveryPersonName.clear();
+    d->lastAcceptedDeliveryId = -1;
+    
+    QMessageBox::information(this, "Logged Out", "You have been logged out successfully.");
+    
+    // Close current window and show main window
+    this->close();
+    
+    // Find and show main window
+    QWidget* parent = this->parentWidget();
+    while (parent && !parent->isWindow()) {
+        parent = parent->parentWidget();
+    }
+    if (parent) {
+        parent->show();
+    }
+}
 
+void DeliveryModule::saveLoginState()
+{
+    if (!d->currentDeliveryPersonId.isEmpty()) {
+        QSettings settings;
+        settings.setValue("lastModule", "delivery");
+        settings.setValue("lastModuleData", d->currentDeliveryPersonId);
+    }
+}
 
 void DeliveryModule::handlePickup()
 {
@@ -697,17 +789,28 @@ void DeliveryModule::handlePickup()
                                  ).arg(pickupLat).arg(pickupLng)
                                  .arg(dropLat).arg(dropLng);
 
-            bool opened = QDesktopServices::openUrl(QUrl(mapUrl));
-            if (!opened) {
-                // WSL/Linux fallback: open in Windows default browser.
-                opened = QProcess::startDetached("cmd.exe", {"/C", "start", "", mapUrl});
-            }
-            if (!opened) {
-                QMessageBox::warning(this, "Open Map Failed",
-                                     QString("Could not open browser automatically.\nOpen this URL manually:\n%1")
-                                         .arg(mapUrl));
-            }
-        });
+            
+QWebEngineView* mapView = new QWebEngineView();
+mapView->setWindowTitle("Delivery Map");
+mapView->resize(1200, 800);
+
+// ✅ enable GPS permission
+mapView->settings()->setAttribute(
+    QWebEngineSettings::JavascriptEnabled, true
+);
+connect(mapView->page(), &QWebEnginePage::featurePermissionRequested,
+        mapView, [mapView](const QUrl& securityOrigin, QWebEnginePage::Feature feature) {
+    if (feature == QWebEnginePage::Geolocation) {
+        mapView->page()->setFeaturePermission(
+            securityOrigin,
+            feature,
+            QWebEnginePage::PermissionGrantedByUser
+            );
+    }
+});
+
+mapView->load(QUrl(mapUrl));
+mapView->show();        });
     });
 }
 

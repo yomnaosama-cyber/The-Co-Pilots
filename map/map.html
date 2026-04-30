@@ -20,6 +20,20 @@
       font-weight: bold;
       border: 2px solid #813e15;
       color: #813e15;
+      max-width: 90vw;
+      text-align: center;
+    }
+    #attrib {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      z-index: 1000;
+      font-size: 11px;
+      color: #333;
+      background: rgba(255,255,255,0.85);
+      padding: 6px 10px;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -27,63 +41,289 @@
 <body>
 <div id="status">Loading delivery route...</div>
 <div id="map"></div>
+<div id="attrib">Route: OSRM demo · Tiles: &copy; OpenStreetMap</div>
 
 <script>
-  // read coordinates from URL
   const params = new URLSearchParams(window.location.search);
   const pickupLat = parseFloat(params.get('pickupLat'));
   const pickupLng = parseFloat(params.get('pickupLng'));
   const dropLat   = parseFloat(params.get('dropLat'));
   const dropLng   = parseFloat(params.get('dropLng'));
 
-  // check if coordinates exist
-  if (isNaN(pickupLat) || isNaN(dropLat)) {
-    document.getElementById('status').textContent = 
-      '❌ No delivery loaded';
-  } else {
+  const statusEl = document.getElementById('status');
 
-    // center map between pickup and drop
+  function haversineMeters(a, b) {
+    const R = 6371000;
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const dLat = toRad(b[0] - a[0]);
+    const dLng = toRad(b[1] - a[1]);
+    const lat1 = toRad(a[0]);
+    const lat2 = toRad(b[0]);
+    const sinDLat = Math.sin(dLat / 2);
+    const sinDLng = Math.sin(dLng / 2);
+    const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  function distanceToSegmentMeters(p, a, b) {
+    const px = p[1], py = p[0];
+    const ax = a[1], ay = a[0];
+    const bx = b[1], by = b[0];
+
+    const abx = bx - ax;
+    const aby = by - ay;
+    const apx = px - ax;
+    const apy = py - ay;
+    const abLenSq = abx * abx + aby * aby;
+    let t = 0;
+    if (abLenSq > 0) {
+      t = Math.max(0, Math.min(1, (apx * abx + apy * aby) / abLenSq));
+    }
+    const cx = ax + t * abx;
+    const cy = ay + t * aby;
+    return haversineMeters([py, px], [cy, cx]);
+  }
+
+  function minDistanceToRouteMeters(point, routeCoords) {
+    if (!routeCoords || routeCoords.length < 2) return Infinity;
+    let best = Infinity;
+    for (let i = 0; i < routeCoords.length - 1; i++) {
+      const d = distanceToSegmentMeters(point, routeCoords[i], routeCoords[i + 1]);
+      if (d < best) best = d;
+    }
+    return best;
+  }
+
+  function buildInstruction(step) {
+    if (!step || !step.maneuver) return 'Continue';
+    const maneuver = step.maneuver;
+    const modifier = maneuver.modifier ? (' ' + maneuver.modifier) : '';
+    let text = '';
+    switch (maneuver.type) {
+      case 'turn':
+        text = 'Turn' + modifier;
+        break;
+      case 'new name':
+      case 'continue':
+        text = 'Continue' + modifier;
+        break;
+      case 'merge':
+        text = 'Merge' + modifier;
+        break;
+      case 'fork':
+        text = 'Keep' + modifier;
+        break;
+      case 'roundabout':
+      case 'rotary':
+        text = 'Enter roundabout';
+        break;
+      case 'arrive':
+        text = 'Arrive at destination';
+        break;
+      default:
+        text = maneuver.type.replace('_', ' ');
+        break;
+    }
+    if (step.name) {
+      text += ' onto ' + step.name;
+    }
+    return text.trim();
+  }
+
+  if (isNaN(pickupLat) || isNaN(pickupLng) || isNaN(dropLat) || isNaN(dropLng)) {
+    statusEl.textContent = '❌ No delivery loaded';
+  } else {
     const centerLat = (pickupLat + dropLat) / 2;
     const centerLng = (pickupLng + dropLng) / 2;
 
-    var map = L.map('map').setView([centerLat, centerLng], 13);
+    const map = L.map('map').setView([centerLat, centerLng], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // green pickup marker
-    var pickupMarker = L.marker([pickupLat, pickupLng], {
+    L.marker([pickupLat, pickupLng], {
       icon: L.divIcon({
         className: '',
         html: '<div style="background:green; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>'
       })
     }).addTo(map)
-      .bindPopup("📦 Pickup Location")
+      .bindPopup('📦 Pickup Location')
       .openPopup();
 
-    // red drop marker
-    var dropMarker = L.marker([dropLat, dropLng], {
+    L.marker([dropLat, dropLng], {
       icon: L.divIcon({
         className: '',
         html: '<div style="background:red; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>'
       })
     }).addTo(map)
-      .bindPopup("🏠 Drop Location");
+      .bindPopup('🏠 Drop Location');
 
-    // dashed line between pickup and drop
-    L.polyline([
-      [pickupLat, pickupLng],
-      [dropLat, dropLng]
-    ], {
-      color: '#813e15', 
-      weight: 3, 
-      dashArray: '10, 10'
-    }).addTo(map);
+    const carMarker = L.marker([centerLat, centerLng], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="font-size: 28px; transform: translate(-50%, -50%);">🚗</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      })
+    }).addTo(map).bindPopup('Driver');
 
-    // update status bar
-    document.getElementById('status').textContent = 
-      '🚗 On way to pickup';
+    let currentLeg = 'toPickup';
+    let currentRoute = null;
+    let currentRouteCoords = [];
+    let currentSteps = [];
+    let watchId = null;
+    let rerouteBusy = false;
+    let lastRerouteAt = 0;
+
+    function targetPoint() {
+      if (currentLeg === 'toPickup') return [pickupLat, pickupLng];
+      return [dropLat, dropLng];
+    }
+
+    function drawFallbackFrom(start, end) {
+      if (currentRoute) map.removeLayer(currentRoute);
+      currentRouteCoords = [start, end];
+      currentRoute = L.polyline(currentRouteCoords, {
+        color: '#813e15',
+        weight: 3,
+        dashArray: '10, 10'
+      }).addTo(map);
+      currentSteps = [];
+      statusEl.textContent = 'Road route unavailable - fallback line shown';
+    }
+
+    function fetchRoute(from, to, reasonLabel) {
+      rerouteBusy = true;
+      const osrmUrl = 'https://router.project-osrm.org/route/v1/driving/'
+        + from[1] + ',' + from[0] + ';' + to[1] + ',' + to[0]
+        + '?overview=full&geometries=geojson&steps=true';
+
+      statusEl.textContent = reasonLabel + '...';
+
+      return fetch(osrmUrl)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code !== 'Ok' || !data.routes || !data.routes[0] || !data.routes[0].geometry) {
+            throw new Error(data.message || data.code || 'No route');
+          }
+
+          const route = data.routes[0];
+          currentRouteCoords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
+          currentSteps = (route.legs && route.legs[0] && route.legs[0].steps) ? route.legs[0].steps : [];
+
+          if (currentRoute) map.removeLayer(currentRoute);
+          currentRoute = L.polyline(currentRouteCoords, {
+            color: currentLeg === 'toPickup' ? '#813e15' : '#1f7a4d',
+            weight: 5,
+            opacity: 0.95
+          }).addTo(map);
+          map.fitBounds(currentRoute.getBounds().pad(0.12));
+
+          const km = (route.distance / 1000).toFixed(1);
+          const min = Math.round(route.duration / 60);
+          const legLabel = currentLeg === 'toPickup' ? 'To pickup' : 'To delivery';
+          const firstInstruction = buildInstruction(currentSteps[0]);
+          statusEl.textContent = legLabel + ' • ' + km + ' km • ' + min + ' min • ' + firstInstruction;
+        })
+        .catch((err) => {
+          console.warn('OSRM route failed:', err);
+          drawFallbackFrom(from, to);
+        })
+        .finally(() => {
+          rerouteBusy = false;
+        });
+    }
+
+    function getNearestInstruction(position) {
+      if (!currentSteps || currentSteps.length === 0) return 'Continue';
+      let nearestStep = currentSteps[0];
+      let best = Infinity;
+      for (let i = 0; i < currentSteps.length; i++) {
+        const loc = currentSteps[i].maneuver && currentSteps[i].maneuver.location;
+        if (!loc || loc.length < 2) continue;
+        const d = haversineMeters(position, [loc[1], loc[0]]);
+        if (d < best) {
+          best = d;
+          nearestStep = currentSteps[i];
+        }
+      }
+      return buildInstruction(nearestStep);
+    }
+
+    function handlePosition(position) {
+      const curr = [position.coords.latitude, position.coords.longitude];
+      carMarker.setLatLng(curr);
+
+      const legTarget = targetPoint();
+      const distToTarget = haversineMeters(curr, legTarget);
+      const instruction = getNearestInstruction(curr);
+      const legLabel = currentLeg === 'toPickup' ? 'To pickup' : 'To delivery';
+      statusEl.textContent = legLabel + ' • ' + Math.round(distToTarget) + ' m • ' + instruction;
+
+      if (distToTarget < 60) {
+        if (currentLeg === 'toPickup') {
+          currentLeg = 'toDrop';
+          fetchRoute(curr, targetPoint(), 'Pickup reached. Loading delivery route');
+        } else {
+          statusEl.textContent = 'Delivered successfully ✅';
+          if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+          }
+        }
+        return;
+      }
+
+      const offRouteDistance = minDistanceToRouteMeters(curr, currentRouteCoords);
+      const now = Date.now();
+      if (!rerouteBusy && offRouteDistance > 90 && now - lastRerouteAt > 7000) {
+        lastRerouteAt = now;
+        fetchRoute(curr, legTarget, 'You are off route. Re-routing');
+      }
+    }
+
+    function startTracking(initialPoint) {
+      fetchRoute(initialPoint, targetPoint(), 'Loading route');
+      watchId = navigator.geolocation.watchPosition(
+        handlePosition,
+        (error) => {
+          statusEl.textContent = 'Live location failed: ' + error.message;
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        }
+      );
+    }
+
+    if (!navigator.geolocation) {
+      statusEl.textContent = 'Geolocation is not supported on this device';
+      drawFallbackFrom([pickupLat, pickupLng], [dropLat, dropLng]);
+    } else {
+      statusEl.textContent = 'Waiting for live driver location...';
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const start = [position.coords.latitude, position.coords.longitude];
+          map.setView(start, 14);
+          carMarker.setLatLng(start);
+          startTracking(start);
+        },
+        (error) => {
+          statusEl.textContent = 'Location denied, using pickup as start';
+          console.warn('Initial geolocation failed:', error.message);
+          const fallbackStart = [pickupLat, pickupLng];
+          carMarker.setLatLng(fallbackStart);
+          fetchRoute(fallbackStart, [dropLat, dropLng], 'Fallback route loaded');
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        }
+      );
+    }
   }
 </script>
 </body>

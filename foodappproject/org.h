@@ -10,6 +10,8 @@ class OrgModule : public QDialog {
 public:
     OrgModule(QWidget *parent = nullptr);
     ~OrgModule();
+    void restoreFromData(const QString& data);
+    void saveOrganizationState(const QString& orgName);
 
 private slots:
     void onRestaurantTab();
@@ -18,12 +20,14 @@ private slots:
     void submitRestaurant();
     void submitOrganization();
     void submitDonation();
+    void handleLogout();
 
 private:
     void setupUI();
     void setupRestaurantPage();
     void setupOrganizationPage();
     void setupDonationPage();
+    void addLogoutButton();
     
     // Pimpl pattern for encapsulation
     class OrgModulePrivate *d;

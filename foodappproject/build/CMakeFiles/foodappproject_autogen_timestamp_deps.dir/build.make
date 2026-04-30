@@ -66,10 +66,14 @@ include CMakeFiles/foodappproject_autogen_timestamp_deps.dir/compiler_depend.mak
 # Include the progress variables for this target.
 include CMakeFiles/foodappproject_autogen_timestamp_deps.dir/progress.make
 
-CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Sql.so.6.4.2
-CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
+CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/qt6/libexec/uic
 CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/qt6/libexec/moc
+CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
+CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Sql.so.6.4.2
+CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6WebEngineCore.so.6.4.2
+CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
+CMakeFiles/foodappproject_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6WebEngineWidgets.so.6.4.2
 
 foodappproject_autogen_timestamp_deps: CMakeFiles/foodappproject_autogen_timestamp_deps
 foodappproject_autogen_timestamp_deps: CMakeFiles/foodappproject_autogen_timestamp_deps.dir/build.make

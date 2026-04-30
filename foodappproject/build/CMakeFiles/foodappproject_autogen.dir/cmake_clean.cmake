@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/foodappproject_autogen"
+  "foodappproject_autogen/include/ui_mainwindow.h"
   "foodappproject_autogen/mocs_compilation.cpp"
   "foodappproject_autogen/timestamp"
 )

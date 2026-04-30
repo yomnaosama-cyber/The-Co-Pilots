@@ -45,9 +45,11 @@ void DatabaseManager::createMealRequestsTable() {
                "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                "person_id INTEGER,"
                "meal_count INTEGER NOT NULL,"
+               "delivered_meals INTEGER DEFAULT 0, "
                "address TEXT NOT NULL,"
                "request_date DATETIME DEFAULT CURRENT_TIMESTAMP,"
                "FOREIGN KEY(person_id) REFERENCES people_sign(id))");
+    query.exec("ALTER TABLE meal_requests ADD COLUMN delivered_meals INTEGER DEFAULT 0");
 }
 
 void DatabaseManager::createUsersTable() {
@@ -92,10 +94,12 @@ void DatabaseManager::createFoodDonationsTable() {
                "provider_name TEXT NOT NULL, "
                "provider_role TEXT NOT NULL, "
                "food_amount TEXT NOT NULL, "
+               "remaining_meals INTEGER DEFAULT 0, " 
                "food_type TEXT NOT NULL, "
                "donation_location TEXT NOT NULL, "
                "delivery_method TEXT NOT NULL, "
                "donation_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
+    query.exec("ALTER TABLE food_donations ADD COLUMN remaining_meals INTEGER DEFAULT 0");
 }
 void DatabaseManager::createAddressesTable() {
     QSqlQuery query;
@@ -125,12 +129,10 @@ query.exec("ALTER TABLE all_addresses ADD COLUMN address_details TEXT");
 query.exec("ALTER TABLE all_addresses ADD COLUMN delivery_status TEXT");
 }
 
-
 void DatabaseManager::matchAddresses() {
     QSqlQuery query;
-
    
-    query.exec("SELECT id, address, person_name, city, street FROM all_addresses "
+    query.exec("SELECT id, address, person_name, city, street, details FROM all_addresses "
                "WHERE source_type = 'meal_request' AND match_status = 'unmatched' "
                "ORDER BY created_at ASC");
 
@@ -138,47 +140,58 @@ void DatabaseManager::matchAddresses() {
         int mealId = query.value(0).toInt();
         QString mealAddress = query.value(1).toString();
         QString personName = query.value(2).toString();
-        QString mealCity = query.value(3).toString().toLower().trimmed();   // ✅ new
-        QString mealStreet = query.value(4).toString().toLower().trimmed(); // ✅ new
-
+        QString mealCity = query.value(3).toString().toLower().trimmed();
+        QString mealStreet = query.value(4).toString().toLower().trimmed();
+        QString details = query.value(5).toString();
+        
+        int requestedMeals = extractMealCount(details);
        
         QStringList mealWords = mealStreet
                                     .remove(QRegularExpression("[^a-zA-Z0-9\\s]"))
                                     .split(" ", Qt::SkipEmptyParts);
 
         QSqlQuery donationQuery;
-
-     
-        donationQuery.exec("SELECT id, address, provider_name, city, street FROM all_addresses "
+        donationQuery.exec("SELECT id, address, provider_name, city, street, source_id FROM all_addresses "
                            "WHERE source_type = 'donation' AND match_status = 'unmatched' "
                            "ORDER BY created_at ASC");
 
         int bestMatchId = -1;
         int bestMatchScore = 0;
         QString bestMatchProvider;
+        int bestMatchDonationSourceId = -1;
+        int bestMatchAvailableMeals = 0;
 
         while (donationQuery.next()) {
             int donationId = donationQuery.value(0).toInt();
             QString providerName = donationQuery.value(2).toString();
-            QString donationCity = donationQuery.value(3).toString().toLower().trimmed();   // ✅ new
-            QString donationStreet = donationQuery.value(4).toString().toLower().trimmed(); // ✅ new
-
+            QString donationCity = donationQuery.value(3).toString().toLower().trimmed();
+            QString donationStreet = donationQuery.value(4).toString().toLower().trimmed();
+            int donationSourceId = donationQuery.value(5).toInt();
+            
+            QSqlQuery mealQuery;
+            mealQuery.prepare("SELECT remaining_meals FROM food_donations WHERE id = :id");
+            mealQuery.bindValue(":id", donationSourceId);
+            int availableMeals = 0;
+            if (mealQuery.exec() && mealQuery.next()) {
+                availableMeals = mealQuery.value(0).toInt();
+            }
+            
+            if (availableMeals <= 0) {
+                continue;
+            }
            
             if (mealCity != donationCity) {
-                continue; // wrong city, don't even score
+                continue;
             }
 
-            //  city matches, start score at 1
             int matchScore = 1;
-
-            //  score by street similarity
             QStringList donationWords = donationStreet
                                             .remove(QRegularExpression("[^a-zA-Z0-9\\s]"))
                                             .split(" ", Qt::SkipEmptyParts);
 
             for (const QString& mealWord : mealWords) {
                 if (donationWords.contains(mealWord) && mealWord.length() > 2) {
-                    matchScore++; // same street word found
+                    matchScore++;
                 }
             }
 
@@ -186,11 +199,35 @@ void DatabaseManager::matchAddresses() {
                 bestMatchScore = matchScore;
                 bestMatchId = donationId;
                 bestMatchProvider = providerName;
+                bestMatchDonationSourceId = donationSourceId;
+                bestMatchAvailableMeals = availableMeals;
             }
         }
 
-        // ✅ only match if score > 0 (means city matched at minimum)
         if (bestMatchId != -1 && bestMatchScore > 0) {
+            int mealsToTake = qMin(requestedMeals, bestMatchAvailableMeals);
+            
+            QSqlQuery updateDonationMeals;
+            updateDonationMeals.prepare("UPDATE food_donations SET "
+                                       "remaining_meals = remaining_meals - :taken "
+                                       "WHERE id = :id");
+            updateDonationMeals.bindValue(":taken", mealsToTake);
+            updateDonationMeals.bindValue(":id", bestMatchDonationSourceId);
+            updateDonationMeals.exec();
+            
+            if (bestMatchAvailableMeals - mealsToTake == 0) {
+                QSqlQuery updateDonation;
+                updateDonation.prepare("UPDATE all_addresses SET "
+                                       "match_status = 'matched', "
+                                       "matched_with_id = :meal_id, "
+                                       "match_score = :score "
+                                       "WHERE id = :donation_id");
+                updateDonation.bindValue(":meal_id", mealId);
+                updateDonation.bindValue(":score", bestMatchScore);
+                updateDonation.bindValue(":donation_id", bestMatchId);
+                updateDonation.exec();
+            }
+            
             QSqlQuery updateMeal;
             updateMeal.prepare("UPDATE all_addresses SET "
                                "match_status = 'matched', "
@@ -202,25 +239,21 @@ void DatabaseManager::matchAddresses() {
             updateMeal.bindValue(":meal_id", mealId);
             updateMeal.exec();
 
-            QSqlQuery updateDonation;
-            updateDonation.prepare("UPDATE all_addresses SET "
-                                   "match_status = 'matched', "
-                                   "matched_with_id = :meal_id, "
-                                   "match_score = :score "
-                                   "WHERE id = :donation_id");
-            updateDonation.bindValue(":meal_id", mealId);
-            updateDonation.bindValue(":score", bestMatchScore);
-            updateDonation.bindValue(":donation_id", bestMatchId);
-            updateDonation.exec();
+            QSqlQuery updateDelivered;
+            updateDelivered.prepare("UPDATE meal_requests SET delivered_meals = delivered_meals + :taken "
+                                    "WHERE person_id = (SELECT person_id FROM all_addresses WHERE id = :meal_id)");
+            updateDelivered.bindValue(":taken", mealsToTake);
+            updateDelivered.bindValue(":meal_id", mealId);
+            updateDelivered.exec();
 
-            qDebug() << "Matched - Meal:" << personName
+            qDebug() << "Matched - Meal:" << personName 
                      << "with Donation:" << bestMatchProvider
-                     << "| City:" << mealCity
-                     << "| Score:" << bestMatchScore;
+                     << "| City:" << mealCity 
+                     << "| Score:" << bestMatchScore
+                     << "| Meals taken:" << mealsToTake << "of" << requestedMeals;
         }
     }
 
-    // Log unmatched addresses
     QSqlQuery unmatchedQuery;
     unmatchedQuery.exec("SELECT id, source_type, address, person_name, provider_name, match_status "
                        "FROM all_addresses WHERE match_status = 'unmatched'");
@@ -236,4 +269,14 @@ void DatabaseManager::matchAddresses() {
                  << (type == "meal_request" ? personName : providerName)
                  << "-" << address;
     }
+}
+
+// Helper function to extract meal count from details string
+int DatabaseManager::extractMealCount(const QString& details) {
+    QRegularExpression re("(\\d+)\\s*meals? requested");
+    QRegularExpressionMatch match = re.match(details);
+    if (match.hasMatch()) {
+        return match.captured(1).toInt();
+    }
+    return 0;
 }

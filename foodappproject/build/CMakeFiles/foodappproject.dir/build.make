@@ -70,8 +70,9 @@ include CMakeFiles/foodappproject.dir/progress.make
 include CMakeFiles/foodappproject.dir/flags.make
 
 foodappproject_autogen/timestamp: /usr/lib/qt6/libexec/moc
+foodappproject_autogen/timestamp: /usr/lib/qt6/libexec/uic
 foodappproject_autogen/timestamp: CMakeFiles/foodappproject.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC for target foodappproject"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC and UIC for target foodappproject"
 	/usr/bin/cmake -E cmake_autogen /home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles/foodappproject_autogen.dir/AutogenInfo.json ""
 	/usr/bin/cmake -E touch /home/microsoftmalak/The-Co-Pilots/foodappproject/build/foodappproject_autogen/timestamp
 
@@ -103,10 +104,38 @@ CMakeFiles/foodappproject.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/foodappproject.dir/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/microsoftmalak/The-Co-Pilots/foodappproject/main.cpp -o CMakeFiles/foodappproject.dir/main.cpp.s
 
+CMakeFiles/foodappproject.dir/mainwindow.cpp.o: CMakeFiles/foodappproject.dir/flags.make
+CMakeFiles/foodappproject.dir/mainwindow.cpp.o: /home/microsoftmalak/The-Co-Pilots/foodappproject/mainwindow.cpp
+CMakeFiles/foodappproject.dir/mainwindow.cpp.o: CMakeFiles/foodappproject.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/foodappproject.dir/mainwindow.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/foodappproject.dir/mainwindow.cpp.o -MF CMakeFiles/foodappproject.dir/mainwindow.cpp.o.d -o CMakeFiles/foodappproject.dir/mainwindow.cpp.o -c /home/microsoftmalak/The-Co-Pilots/foodappproject/mainwindow.cpp
+
+CMakeFiles/foodappproject.dir/mainwindow.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/foodappproject.dir/mainwindow.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/microsoftmalak/The-Co-Pilots/foodappproject/mainwindow.cpp > CMakeFiles/foodappproject.dir/mainwindow.cpp.i
+
+CMakeFiles/foodappproject.dir/mainwindow.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/foodappproject.dir/mainwindow.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/microsoftmalak/The-Co-Pilots/foodappproject/mainwindow.cpp -o CMakeFiles/foodappproject.dir/mainwindow.cpp.s
+
+CMakeFiles/foodappproject.dir/database.cpp.o: CMakeFiles/foodappproject.dir/flags.make
+CMakeFiles/foodappproject.dir/database.cpp.o: /home/microsoftmalak/The-Co-Pilots/foodappproject/database.cpp
+CMakeFiles/foodappproject.dir/database.cpp.o: CMakeFiles/foodappproject.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/foodappproject.dir/database.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/foodappproject.dir/database.cpp.o -MF CMakeFiles/foodappproject.dir/database.cpp.o.d -o CMakeFiles/foodappproject.dir/database.cpp.o -c /home/microsoftmalak/The-Co-Pilots/foodappproject/database.cpp
+
+CMakeFiles/foodappproject.dir/database.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/foodappproject.dir/database.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/microsoftmalak/The-Co-Pilots/foodappproject/database.cpp > CMakeFiles/foodappproject.dir/database.cpp.i
+
+CMakeFiles/foodappproject.dir/database.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/foodappproject.dir/database.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/microsoftmalak/The-Co-Pilots/foodappproject/database.cpp -o CMakeFiles/foodappproject.dir/database.cpp.s
+
 CMakeFiles/foodappproject.dir/delivery.cpp.o: CMakeFiles/foodappproject.dir/flags.make
 CMakeFiles/foodappproject.dir/delivery.cpp.o: /home/microsoftmalak/The-Co-Pilots/foodappproject/delivery.cpp
 CMakeFiles/foodappproject.dir/delivery.cpp.o: CMakeFiles/foodappproject.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/foodappproject.dir/delivery.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/foodappproject.dir/delivery.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/foodappproject.dir/delivery.cpp.o -MF CMakeFiles/foodappproject.dir/delivery.cpp.o.d -o CMakeFiles/foodappproject.dir/delivery.cpp.o -c /home/microsoftmalak/The-Co-Pilots/foodappproject/delivery.cpp
 
 CMakeFiles/foodappproject.dir/delivery.cpp.i: cmake_force
@@ -120,7 +149,7 @@ CMakeFiles/foodappproject.dir/delivery.cpp.s: cmake_force
 CMakeFiles/foodappproject.dir/people.cpp.o: CMakeFiles/foodappproject.dir/flags.make
 CMakeFiles/foodappproject.dir/people.cpp.o: /home/microsoftmalak/The-Co-Pilots/foodappproject/people.cpp
 CMakeFiles/foodappproject.dir/people.cpp.o: CMakeFiles/foodappproject.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/foodappproject.dir/people.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/foodappproject.dir/people.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/foodappproject.dir/people.cpp.o -MF CMakeFiles/foodappproject.dir/people.cpp.o.d -o CMakeFiles/foodappproject.dir/people.cpp.o -c /home/microsoftmalak/The-Co-Pilots/foodappproject/people.cpp
 
 CMakeFiles/foodappproject.dir/people.cpp.i: cmake_force
@@ -134,7 +163,7 @@ CMakeFiles/foodappproject.dir/people.cpp.s: cmake_force
 CMakeFiles/foodappproject.dir/org.cpp.o: CMakeFiles/foodappproject.dir/flags.make
 CMakeFiles/foodappproject.dir/org.cpp.o: /home/microsoftmalak/The-Co-Pilots/foodappproject/org.cpp
 CMakeFiles/foodappproject.dir/org.cpp.o: CMakeFiles/foodappproject.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/foodappproject.dir/org.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/foodappproject.dir/org.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/foodappproject.dir/org.cpp.o -MF CMakeFiles/foodappproject.dir/org.cpp.o.d -o CMakeFiles/foodappproject.dir/org.cpp.o -c /home/microsoftmalak/The-Co-Pilots/foodappproject/org.cpp
 
 CMakeFiles/foodappproject.dir/org.cpp.i: cmake_force
@@ -149,6 +178,8 @@ CMakeFiles/foodappproject.dir/org.cpp.s: cmake_force
 foodappproject_OBJECTS = \
 "CMakeFiles/foodappproject.dir/foodappproject_autogen/mocs_compilation.cpp.o" \
 "CMakeFiles/foodappproject.dir/main.cpp.o" \
+"CMakeFiles/foodappproject.dir/mainwindow.cpp.o" \
+"CMakeFiles/foodappproject.dir/database.cpp.o" \
 "CMakeFiles/foodappproject.dir/delivery.cpp.o" \
 "CMakeFiles/foodappproject.dir/people.cpp.o" \
 "CMakeFiles/foodappproject.dir/org.cpp.o"
@@ -158,18 +189,30 @@ foodappproject_EXTERNAL_OBJECTS =
 
 foodappproject: CMakeFiles/foodappproject.dir/foodappproject_autogen/mocs_compilation.cpp.o
 foodappproject: CMakeFiles/foodappproject.dir/main.cpp.o
+foodappproject: CMakeFiles/foodappproject.dir/mainwindow.cpp.o
+foodappproject: CMakeFiles/foodappproject.dir/database.cpp.o
 foodappproject: CMakeFiles/foodappproject.dir/delivery.cpp.o
 foodappproject: CMakeFiles/foodappproject.dir/people.cpp.o
 foodappproject: CMakeFiles/foodappproject.dir/org.cpp.o
 foodappproject: CMakeFiles/foodappproject.dir/build.make
-foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
 foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Sql.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6WebEngineWidgets.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6WebEngineCore.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Quick.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6QmlModels.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6OpenGL.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6WebChannel.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Qml.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Positioning.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6PrintSupport.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
 foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
+foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 foodappproject: /usr/lib/x86_64-linux-gnu/libGLX.so
 foodappproject: /usr/lib/x86_64-linux-gnu/libOpenGL.so
-foodappproject: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 foodappproject: CMakeFiles/foodappproject.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable foodappproject"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/microsoftmalak/The-Co-Pilots/foodappproject/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX executable foodappproject"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/foodappproject.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

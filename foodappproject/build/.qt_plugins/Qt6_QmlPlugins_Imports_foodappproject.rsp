@@ -1,0 +1,9 @@
+-rootPath
+/home/microsoftmalak/The-Co-Pilots/foodappproject
+-cmake-output
+-output-file
+/home/microsoftmalak/The-Co-Pilots/foodappproject/build/.qt_plugins/Qt6_QmlPlugins_Imports_foodappproject.cmake
+-importPath
+/home/microsoftmalak/The-Co-Pilots/foodappproject/build
+-importPath
+/usr/lib/x86_64-linux-gnu/qt6/qml
