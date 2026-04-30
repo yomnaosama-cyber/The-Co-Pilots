@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Delivery Tracking</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        #status-panel {
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            z-index: 5;
+            width: min(360px, calc(100% - 32px));
+            background: rgba(255, 255, 255, 0.96);
+            border: 2px solid #813e15;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+            color: #4b240c;
+            padding: 14px 16px;
+        }
+
+        #status-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #813e15;
+        }
+
+        #status-details,
+        #driver-link {
+            font-size: 13px;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        #driver-link {
+            margin-top: 8px;
+            color: #6d3b1c;
+        }
+
+        .error {
+            color: #9f1d1d;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<div id="status-panel">
+    <div id="status-title">Loading map...</div>
+    <div id="status-details">Preparing delivery route</div>
+    <div id="driver-link"></div>
+</div>
+<div id="map"></div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const apiKey = params.get('apiKey') || '';
+    const deliveryId = params.get('deliveryId') || params.get('id');
+    const pickup = {
+        lat: Number(params.get('pickupLat')),
+        lng: Number(params.get('pickupLng'))
+    };
+    const drop = {
+        lat: Number(params.get('dropLat')),
+        lng: Number(params.get('dropLng'))
+    };
+    const serverBase = window.location.origin && window.location.origin !== 'null'
+        ? window.location.origin
+        : 'http://localhost:3000';
+
+    let map;
+    let directionsService;
+    let directionsRenderer;
+    let pickupMarker;
+    let dropMarker;
+    let driverMarker;
+    let lastDriverPosition = null;
+    let lastRouteAt = 0;
+    let currentDeliveryStatus = 'on_way_to_pickup';
+    let currentDestinationKey = '';
+
+    const statusTitle = document.getElementById('status-title');
+    const statusDetails = document.getElementById('status-details');
+    const driverLink = document.getElementById('driver-link');
+
+    function setStatus(title, details, isError = false) {
+        statusTitle.textContent = title;
+        statusDetails.textContent = details;
+        statusTitle.classList.toggle('error', isError);
+    }
+
+    function isValidPoint(point) {
+        return Number.isFinite(point.lat) && Number.isFinite(point.lng);
+    }
+
+    function destinationForStatus(status) {
+        return status === 'on_way_to_delivery' ? drop : pickup;
+    }
+
+    function statusLabel(status) {
+        return status === 'on_way_to_delivery'
+            ? 'Heading to delivery'
+            : 'Heading to pickup';
+    }
+
+    function driverUrl() {
+        return `${serverBase}/driver_live.html?deliveryId=${encodeURIComponent(deliveryId)}`;
+    }
+
+    window.initApp = function initApp() {
+        if (!deliveryId || !isValidPoint(pickup) || !isValidPoint(drop)) {
+            setStatus('Missing delivery data', 'Open this map from the Pickup button after accepting a delivery.', true);
+            return;
+        }
+
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: pickup,
+            zoom: 13,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: true
+        });
+
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+            map,
+            suppressMarkers: true,
+            preserveViewport: true,
+            polylineOptions: {
+                strokeColor: '#ba6c3b',
+                strokeWeight: 6,
+                strokeOpacity: 0.9
+            }
+        });
+
+        pickupMarker = new google.maps.Marker({
+            map,
+            position: pickup,
+            label: 'P',
+            title: 'Pickup location'
+        });
+
+        dropMarker = new google.maps.Marker({
+            map,
+            position: drop,
+            label: 'D',
+            title: 'Delivery location'
+        });
+
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend(pickup);
+        bounds.extend(drop);
+        map.fitBounds(bounds);
+
+        driverLink.textContent = `Driver phone: ${driverUrl()}`;
+        setStatus('Waiting for driver GPS', 'Open the driver phone link and press Start Live Tracking.');
+        pollDriverLocation();
+        setInterval(pollDriverLocation, 2000);
+    };
+
+    function updateDriverPosition(lat, lng) {
+        const position = { lat, lng };
+        lastDriverPosition = position;
+
+        if (!driverMarker) {
+            driverMarker = new google.maps.Marker({
+                map,
+                position,
+                title: 'Delivery driver',
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    fillColor: '#1f7a4d',
+                    fillOpacity: 1,
+                    strokeColor: '#ffffff',
+                    strokeWeight: 3,
+                    scale: 9
+                }
+            });
+        } else {
+            driverMarker.setPosition(position);
+        }
+    }
+
+    async function pollDriverLocation() {
+        if (!deliveryId || !map) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${serverBase}/driver-location?id=${encodeURIComponent(deliveryId)}`);
+            if (response.status === 404) {
+                setStatus('Waiting for driver GPS', 'The map is ready. Start tracking from the driver phone.');
+                return;
+            }
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const data = await response.json();
+            currentDeliveryStatus = data.status || currentDeliveryStatus;
+            updateDriverPosition(Number(data.lat), Number(data.lng));
+
+            const destination = destinationForStatus(currentDeliveryStatus);
+            const destinationKey = `${currentDeliveryStatus}:${destination.lat},${destination.lng}`;
+            const shouldRedrawRoute =
+                destinationKey !== currentDestinationKey ||
+                Date.now() - lastRouteAt > 20000;
+
+            if (shouldRedrawRoute) {
+                currentDestinationKey = destinationKey;
+                drawRoute(lastDriverPosition, destination);
+            } else {
+                setStatus(statusLabel(currentDeliveryStatus), 'Live driver location updated.');
+            }
+        } catch (error) {
+            setStatus('Tracking error', error.message, true);
+        }
+    }
+
+    function drawRoute(origin, destination) {
+        lastRouteAt = Date.now();
+
+        directionsService.route({
+            origin,
+            destination,
+            travelMode: google.maps.TravelMode.DRIVING
+        }, (result, status) => {
+            if (status !== 'OK' || !result.routes.length) {
+                setStatus('Route error', `Google Directions failed: ${status}`, true);
+                return;
+            }
+
+            directionsRenderer.setDirections(result);
+            const leg = result.routes[0].legs[0];
+            setStatus(
+                statusLabel(currentDeliveryStatus),
+                `${leg.duration.text} remaining, ${leg.distance.text}`
+            );
+        });
+    }
+
+    function loadGoogleMaps() {
+        if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
+            setStatus('Google Maps API key missing', 'Replace YOUR_GOOGLE_MAPS_API_KEY in map_view.html, or pass apiKey in the URL.', true);
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&callback=initApp&loading=async`;
+        script.async = true;
+        script.defer = true;
+        script.onerror = () => {
+            setStatus('Google Maps failed to load', 'Check the API key, billing, enabled APIs, and referrer restrictions.', true);
+        };
+        document.head.appendChild(script);
+    }
+
+    loadGoogleMaps();
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+# Build outputs
+build/
+**/build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+*.ninja
+.ninja_*
+
+# Qt Creator / Qt generated files
+.qt/
+.qtc/
+.qtc_clangd/
+.qtcreator/
+*_autogen/
+moc_*.cpp
+moc_*.cpp.d
+moc_predefs.h
+ui_*.h
+
+# Compiled binaries and objects
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.exe
+*.out
+foodappproject/map/server
+foodappproject/map/geoserver
+foodappproject/map/server_new
+map/server
+
+# Local databases and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Local secrets
+.env
+*.local

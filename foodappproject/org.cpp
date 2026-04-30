@@ -63,30 +63,79 @@ void OrgModule::setupUI()
     setWindowTitle("Provider Registration");
     setMinimumSize(560, 620);
     setStyleSheet(
-        "QDialog { background-color: #efe4d0; }"
-        "QLabel { color: #813e15; font-size: 14px; }"
+        "QDialog { background-color: #fff6f8; }"
+        "QLabel { color: #231f20; font-size: 14px; font-weight: 800; }"
         "QLineEdit, QTextEdit, QComboBox {"
         "    background-color: white;"
-        "    color: black;"
-        "    border: 2px solid #813e15;"
-        "    border-radius: 10px;"
-        "    padding: 6px;"
+        "    color: #231f20;"
+        "    border: 2px solid #f2d9de;"
+        "    border-radius: 16px;"
+        "    padding: 10px;"
+        "}"
+        "QLineEdit:focus, QTextEdit:focus, QComboBox:focus {"
+        "    border: 2px solid #f28fa0;"
+        "}"
+        "QStackedWidget {"
+        "    background-color: #ffffff;"
+        "    border: 1px solid #f2d9de;"
+        "    border-radius: 24px;"
         "}"
         "QPushButton {"
-        "    background-color: #813e15;"
-        "    color: white;"
-        "    border-radius: 12px;"
-        "    padding: 10px;"
-        "    font-weight: bold;"
+        "    background-color: #f28fa0;"
+        "    color: #231f20;"
+        "    border: none;"
+        "    border-radius: 22px;"
+        "    padding: 11px 18px;"
+        "    font-weight: 900;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: #df6076;"
+        "    color: #ffffff;"
         "}"
     );
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(24, 24, 24, 24);
+    mainLayout->setSpacing(18);
 
     QLabel* title = new QLabel("Community Food Connect");
     title->setAlignment(Qt::AlignCenter);
-    title->setStyleSheet("font-size: 24px; font-weight: 700; color: #813e15;");
+    title->setStyleSheet("font-size: 28px; font-weight: 900; color: #231f20;");
     mainLayout->addWidget(title);
+
+    QWidget* providerPictures = new QWidget();
+    providerPictures->setStyleSheet("background: transparent;");
+    QHBoxLayout* providerPictureLayout = new QHBoxLayout(providerPictures);
+    providerPictureLayout->setSpacing(12);
+    providerPictureLayout->setContentsMargins(0, 0, 0, 0);
+
+    auto createProviderPicture = [](const QString& icon, const QString& label) {
+        QWidget* card = new QWidget();
+        card->setStyleSheet(
+            "QWidget {"
+            "   background-color: #ffffff;"
+            "   border: 1px solid #f2d9de;"
+            "   border-radius: 20px;"
+            "}"
+        );
+        QVBoxLayout* cardLayout = new QVBoxLayout(card);
+        cardLayout->setContentsMargins(12, 10, 12, 10);
+        cardLayout->setSpacing(5);
+        QLabel* iconLabel = new QLabel(icon);
+        iconLabel->setAlignment(Qt::AlignCenter);
+        iconLabel->setStyleSheet("font-size: 30px; background: transparent; border: none;");
+        QLabel* textLabel = new QLabel(label);
+        textLabel->setAlignment(Qt::AlignCenter);
+        textLabel->setStyleSheet("color: #77676c; font-size: 12px; font-weight: 800; background: transparent; border: none;");
+        cardLayout->addWidget(iconLabel);
+        cardLayout->addWidget(textLabel);
+        return card;
+    };
+
+    providerPictureLayout->addWidget(createProviderPicture("🍽️", "Restaurants"));
+    providerPictureLayout->addWidget(createProviderPicture("🤝", "Organizations"));
+    providerPictureLayout->addWidget(createProviderPicture("🚚", "Donations"));
+    mainLayout->addWidget(providerPictures);
 
     // Tab buttons
     QHBoxLayout* switchLayout = new QHBoxLayout();
@@ -408,17 +457,18 @@ void OrgModule::addLogoutButton()
     logoutBtn->setCursor(Qt::PointingHandCursor);
     logoutBtn->setStyleSheet(
         "QPushButton {"
-        "   background-color: #d4a373;"
-        "   border: 2px solid #813e15;"
+        "   background-color: #ffffff;"
+        "   border: 2px solid #f2d9de;"
         "   border-radius: 28px;"
         "   padding: 10px;"
         "   font-size: 14px;"
-        "   font-weight: bold;"
-        "   color: #ffffff;"
+        "   font-weight: 900;"
+        "   color: #df6076;"
         "   margin-top: 20px;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #ba6c3b;"
+        "   background-color: #fff0f3;"
+        "   border-color: #f28fa0;"
         "}"
     );
     

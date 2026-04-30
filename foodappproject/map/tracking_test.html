@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking Test</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #f4ece7;
+            color: #4b240c;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        header {
+            padding: 16px;
+            background: #fffaf7;
+            border-bottom: 2px solid #813e15;
+        }
+
+        h1 {
+            margin: 0 0 6px;
+            color: #813e15;
+            font-size: 22px;
+        }
+
+        #status {
+            font-size: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        #stage {
+            position: relative;
+            margin: 18px;
+            border: 2px solid #813e15;
+            border-radius: 8px;
+            background:
+                linear-gradient(90deg, rgba(129, 62, 21, 0.08) 1px, transparent 1px),
+                linear-gradient(rgba(129, 62, 21, 0.08) 1px, transparent 1px),
+                #ffffff;
+            background-size: 40px 40px;
+            overflow: hidden;
+        }
+
+        .pin {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        #pickup {
+            left: 15%;
+            top: 75%;
+            background: #247a42;
+        }
+
+        #drop {
+            left: 85%;
+            top: 25%;
+            background: #b42525;
+        }
+
+        #driver {
+            left: 50%;
+            top: 50%;
+            width: 22px;
+            height: 22px;
+            background: #1f61c2;
+            transition: left 400ms ease, top 400ms ease;
+        }
+
+        .label {
+            position: absolute;
+            transform: translate(-50%, 18px);
+            font-size: 13px;
+            font-weight: 700;
+            color: #4b240c;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>No-Google Live Tracking Test</h1>
+    <div id="status">Waiting for location...</div>
+</header>
+<main id="stage">
+    <div id="pickup" class="pin"></div>
+    <div class="label" style="left:15%;top:75%">Pickup</div>
+    <div id="drop" class="pin"></div>
+    <div class="label" style="left:85%;top:25%">Delivery</div>
+    <div id="driver" class="pin"></div>
+    <div class="label" id="driver-label" style="left:50%;top:50%">Driver</div>
+</main>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const deliveryId = params.get('deliveryId') || params.get('id') || '1';
+    const pickupLat = Number(params.get('pickupLat') || 30.0444);
+    const pickupLng = Number(params.get('pickupLng') || 31.2357);
+    const dropLat = Number(params.get('dropLat') || 30.0896);
+    const dropLng = Number(params.get('dropLng') || 31.6669);
+    const serverBase = window.location.origin;
+
+    const statusEl = document.getElementById('status');
+    const driverEl = document.getElementById('driver');
+    const driverLabelEl = document.getElementById('driver-label');
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function updateDriver(lat, lng, status) {
+        const minLat = Math.min(pickupLat, dropLat);
+        const maxLat = Math.max(pickupLat, dropLat);
+        const minLng = Math.min(pickupLng, dropLng);
+        const maxLng = Math.max(pickupLng, dropLng);
+
+        const x = clamp(((lng - minLng) / Math.max(0.000001, maxLng - minLng)) * 70 + 15, 5, 95);
+        const y = clamp(85 - (((lat - minLat) / Math.max(0.000001, maxLat - minLat)) * 70 + 5), 5, 95);
+
+        driverEl.style.left = `${x}%`;
+        driverEl.style.top = `${y}%`;
+        driverLabelEl.style.left = `${x}%`;
+        driverLabelEl.style.top = `${y}%`;
+        statusEl.textContent = `Delivery ${deliveryId}: ${status || 'tracking'} | ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+
+    async function poll() {
+        try {
+            const response = await fetch(`${serverBase}/driver-location?id=${encodeURIComponent(deliveryId)}`);
+            if (response.status === 404) {
+                statusEl.textContent = `Delivery ${deliveryId}: no GPS received yet. Open driver_live.html and start tracking.`;
+                return;
+            }
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            const data = await response.json();
+            updateDriver(Number(data.lat), Number(data.lng), data.status);
+        } catch (error) {
+            statusEl.textContent = `Tracking error: ${error.message}`;
+        }
+    }
+
+    poll();
+    setInterval(poll, 2000);
+</script>
+</body>
+</html>

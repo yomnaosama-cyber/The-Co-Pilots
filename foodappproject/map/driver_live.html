@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Navigation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; font-family: Arial, sans-serif; background: #1a1a1a; color: white; overflow: hidden; }
+
+        /* ── top controls ── */
+        #top-panel {
+            display: flex;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #444;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .info-box {
+            background: #3a3a3a;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            flex: 1;
+            min-width: 80px;
+        }
+        .info-label { color: #aaa; font-size: 10px; }
+        .info-val   { font-weight: 700; font-size: 13px; }
+        #btn-group  { display: flex; gap: 6px; }
+        button {
+            border: none; border-radius: 8px; font-weight: 700;
+            cursor: pointer; padding: 8px 14px; font-size: 13px;
+        }
+        #start-btn   { background: #813e15; color: white; }
+        #confirm-btn { background: #2e7d32; color: white; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── navigation banner ── */
+        #nav-banner {
+            background: #1565c0;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-height: 72px;
+        }
+        #nav-arrow {
+            font-size: 40px;
+            line-height: 1;
+            min-width: 44px;
+            text-align: center;
+        }
+        #nav-text { flex: 1; }
+        #nav-instruction {
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        #nav-distance {
+            font-size: 13px;
+            color: #90caf9;
+            margin-top: 2px;
+        }
+        #nav-eta {
+            font-size: 12px;
+            color: #bbdefb;
+            text-align: right;
+            min-width: 70px;
+        }
+
+        /* ── map ── */
+        #map {
+            width: 100%;
+            height: calc(100vh - 140px);
+        }
+    </style>
+</head>
+<body>
+
+<!-- controls -->
+<div id="top-panel">
+    <div class="info-box">
+        <div class="info-label">Delivery ID</div>
+        <div class="info-val" id="delivery-id">…</div>
+    </div>
+    <div class="info-box">
+        <div class="info-label">GPS</div>
+        <div class="info-val" id="gps-status">Waiting</div>
+    </div>
+    <div class="info-box">
+        <div class="info-label">Phase</div>
+        <div class="info-val" id="phase">—</div>
+    </div>
+    <div id="btn-group">
+        <button id="start-btn">Start</button>
+        <button id="confirm-btn" disabled>Confirm Pickup</button>
+    </div>
+</div>
+
+<!-- navigation banner -->
+<div id="nav-banner">
+    <div id="nav-arrow">↑</div>
+    <div id="nav-text">
+        <div id="nav-instruction">Waiting for GPS…</div>
+        <div id="nav-distance"></div>
+    </div>
+    <div id="nav-eta"></div>
+</div>
+
+<div id="map"></div>
+
+<script>
+const GOOGLE_API_KEY = 'AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk';
+const serverBase  = (window.location.origin && window.location.origin !== 'null')
+                    ? window.location.origin : 'http://localhost:3000';
+const params      = new URLSearchParams(window.location.search);
+const deliveryId  = params.get('deliveryId') || params.get('id');
+
+const deliveryIdEl  = document.getElementById('delivery-id');
+const gpsStatusEl   = document.getElementById('gps-status');
+const phaseEl       = document.getElementById('phase');
+const startBtn      = document.getElementById('start-btn');
+const confirmBtn    = document.getElementById('confirm-btn');
+const navArrowEl    = document.getElementById('nav-arrow');
+const navInstrEl    = document.getElementById('nav-instruction');
+const navDistEl     = document.getElementById('nav-distance');
+const navEtaEl      = document.getElementById('nav-eta');
+
+deliveryIdEl.textContent = deliveryId || 'Missing ID';
+
+let map, directionsService, directionsRenderer, driverMarker;
+let pickup = null, drop = null;
+let watchId = null, lastSentAt = 0, lastDriverPos = null;
+let phase = 'on_way_to_pickup';
+let routeSteps = [];
+let currentStepIdx = 0;
+
+// ── helpers ─────────────────────────────────────────────
+
+function maneuverArrow(maneuver) {
+    const map = {
+        'turn-left': '←', 'turn-sharp-left': '↰', 'turn-slight-left': '↖',
+        'turn-right': '→', 'turn-sharp-right': '↱', 'turn-slight-right': '↗',
+        'straight': '↑', 'keep-left': '↖', 'keep-right': '↗',
+        'ramp-left': '↙', 'ramp-right': '↘',
+        'fork-left': '↖', 'fork-right': '↗',
+        'merge': '↑', 'ferry': '⛴',
+        'roundabout-left': '↺', 'roundabout-right': '↻',
+        'uturn-left': '↩', 'uturn-right': '↪'
+    };
+    return map[maneuver] || '↑';
+}
+
+function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+}
+
+// Haversine distance in metres
+function distMetres(a, b) {
+    const R = 6371000;
+    const dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+    const s = Math.sin(dLat / 2) ** 2 +
+              Math.cos(a.lat * Math.PI / 180) *
+              Math.cos(b.lat * Math.PI / 180) *
+              Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+// ── navigation banner update ─────────────────────────────
+
+function updateNavBanner(driverPos) {
+    if (!routeSteps.length) return;
+
+    // advance step when driver is within 25m of step end
+    while (currentStepIdx < routeSteps.length - 1) {
+        const stepEnd = routeSteps[currentStepIdx].end_location;
+        const d = distMetres(driverPos, { lat: stepEnd.lat(), lng: stepEnd.lng() });
+        if (d < 25) { currentStepIdx++; } else { break; }
+    }
+
+    const step = routeSteps[currentStepIdx];
+    const distToEnd = distMetres(driverPos, {
+        lat: step.end_location.lat(),
+        lng: step.end_location.lng()
+    });
+
+    const distStr = distToEnd < 1000
+        ? `in ${Math.round(distToEnd)} m`
+        : `in ${(distToEnd / 1000).toFixed(1)} km`;
+
+    navArrowEl.textContent = maneuverArrow(step.maneuver);
+    navInstrEl.innerHTML   = step.instructions;   // Google provides HTML with street names
+    navDistEl.textContent  = distStr;
+}
+
+function setBannerRoute(result) {
+    routeSteps    = result.routes[0].legs[0].steps;
+    currentStepIdx = 0;
+    const leg     = result.routes[0].legs[0];
+    navEtaEl.textContent = leg.duration.text + '\n' + leg.distance.text;
+    if (lastDriverPos) updateNavBanner(lastDriverPos);
+}
+
+// ── routing ─────────────────────────────────────────────
+
+function drawRoute(origin, destination) {
+    if (!origin || !destination) return;
+    directionsService.route({
+        origin,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING
+    }, (result, status) => {
+        if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+            setBannerRoute(result);
+        } else {
+            navInstrEl.textContent = 'Route error: ' + status;
+        }
+    });
+}
+
+// ── job coords ───────────────────────────────────────────
+
+async function loadJobCoords() {
+    try {
+        const res  = await fetch(`${serverBase}/job-coords?id=${encodeURIComponent(deliveryId)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        pickup = { lat: data.pickup_lat, lng: data.pickup_lng };
+        drop   = { lat: data.drop_lat,   lng: data.drop_lng   };
+
+        new google.maps.Marker({ map, position: pickup, label: 'P', title: 'Pickup' });
+        new google.maps.Marker({ map, position: drop,   label: 'D', title: 'Drop'   });
+
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend(pickup);
+        bounds.extend(drop);
+        map.fitBounds(bounds);
+
+        phaseEl.textContent = 'Go to Pickup';
+    } catch (e) {
+        console.warn('job-coords:', e.message);
+    }
+}
+
+// ── driver marker & location ─────────────────────────────
+
+function updateDriverMarker(lat, lng) {
+    const pos = { lat, lng };
+    lastDriverPos = pos;
+    if (!driverMarker) {
+        driverMarker = new google.maps.Marker({
+            map, position: pos, title: 'You',
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: '#4caf50', fillOpacity: 1,
+                strokeColor: '#fff', strokeWeight: 3, scale: 10
+            }
+        });
+    } else {
+        driverMarker.setPosition(pos);
+    }
+
+    // update banner from latest GPS
+    if (routeSteps.length) updateNavBanner(pos);
+
+    const dest = phase === 'on_way_to_delivery' ? drop : pickup;
+    drawRoute(pos, dest);
+}
+
+async function sendLocation(position) {
+    const now = Date.now();
+    if (now - lastSentAt < 2000) return;
+    lastSentAt = now;
+    const { latitude: lat, longitude: lng } = position.coords;
+    await postJson('/driver-location', { delivery_id: deliveryId, lat, lng });
+    gpsStatusEl.textContent = 'Active';
+    gpsStatusEl.style.color = '#4caf50';
+    confirmBtn.disabled = false;
+    updateDriverMarker(lat, lng);
+}
+
+// ── events ───────────────────────────────────────────────
+
+async function postJson(path, body) {
+    const res = await fetch(serverBase + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+
+startBtn.addEventListener('click', () => {
+    if (!deliveryId)            { gpsStatusEl.textContent = 'No ID'; return; }
+    if (!navigator.geolocation) { gpsStatusEl.textContent = 'GPS N/A'; return; }
+    startBtn.disabled = true;
+    gpsStatusEl.textContent = 'Requesting…';
+    watchId = navigator.geolocation.watchPosition(
+        pos => sendLocation(pos).catch(e => { gpsStatusEl.textContent = e.message; gpsStatusEl.style.color = 'red'; }),
+        err => { startBtn.disabled = false; gpsStatusEl.textContent = err.message; },
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+    );
+});
+
+confirmBtn.addEventListener('click', async () => {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Confirming…';
+    try {
+        await postJson('/confirm-pickup', { delivery_id: deliveryId });
+        phase = 'on_way_to_delivery';
+        confirmBtn.textContent = '✓ Confirmed';
+        phaseEl.textContent = 'Go to Drop';
+        routeSteps = [];
+        currentStepIdx = 0;
+        navInstrEl.textContent = 'Heading to delivery…';
+        navArrowEl.textContent = '↑';
+        navDistEl.textContent  = '';
+        if (lastDriverPos && drop) drawRoute(lastDriverPos, drop);
+    } catch (e) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm Pickup';
+        gpsStatusEl.textContent = e.message;
+    }
+});
+
+window.addEventListener('beforeunload', () => {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+});
+
+// ── init ─────────────────────────────────────────────────
+
+window.initApp = function () {
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: 30.044, lng: 31.235 },
+        zoom: 14,
+        mapTypeControl: false,
+        streetViewControl: false,
+        zoomControl: true,
+        fullscreenControl: false
+    });
+
+    directionsService  = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map,
+        suppressMarkers: true,
+        polylineOptions: { strokeColor: '#1565c0', strokeWeight: 7, strokeOpacity: 0.9 }
+    });
+
+    if (deliveryId) loadJobCoords();
+};
+
+const script   = document.createElement('script');
+script.src     = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&callback=initApp&loading=async`;
+script.async   = true;
+script.defer   = true;
+document.head.appendChild(script);
+</script>
+</body>
+</html>

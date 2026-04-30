@@ -1,4 +1,7 @@
 #include "delivery.h"
+#include <QProcess>
+#include <QDir>
+#include <QCoreApplication>
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -47,19 +50,40 @@ public:
     QString lastAcceptedDropAddress = "";
     QDialog *loginDialog = nullptr;
     QLineEdit *loginIdField = nullptr;
+    QProcess *serverProcess = nullptr;
 };
+
+static void startTrackingServer(DeliveryModulePrivate* d)
+{
+    QString serverBinary = QCoreApplication::applicationDirPath() + "/map_server";
+    QString htmlDir      = QString(MAP_SOURCE_DIR);
+
+    d->serverProcess = new QProcess();
+
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert("GOOGLE_MAPS_API_KEY", "AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk");
+    d->serverProcess->setProcessEnvironment(env);
+
+    d->serverProcess->start(serverBinary, QStringList() << htmlDir);
+}
 
 DeliveryModule::DeliveryModule(QWidget *parent)
     : QMainWindow(parent), d(new DeliveryModulePrivate())
 {
+    startTrackingServer(d);
     setupUI();
     setupSignUpDialog();
     setupNotificationsDialog();
-    setupLoginDialog();// ✅ ADD THIS
+    setupLoginDialog();
 }
 
 DeliveryModule::~DeliveryModule()
 {
+    if (d->serverProcess) {
+        d->serverProcess->terminate();
+        d->serverProcess->waitForFinished(2000);
+        delete d->serverProcess;
+    }
     delete d;
 }
 
@@ -67,33 +91,70 @@ void DeliveryModule::setupUI()
 {// this is the delivery system
     setWindowTitle("Delivery");
     setMinimumSize(800, 600);
-    setStyleSheet("QMainWindow { background-color: #efe4d0; }");
+    setStyleSheet("QMainWindow { background-color: #fff6f8; }");
 
     QWidget* central = new QWidget();
     setCentralWidget(central);
 
     QVBoxLayout* layout = new QVBoxLayout(central);
     layout->setAlignment(Qt::AlignHCenter);
-    layout->setSpacing(40);
+    layout->setSpacing(24);
+    layout->setContentsMargins(44, 34, 44, 34);
 
     QLabel* header = new QLabel("Delivery System");
     header->setFont(QFont("Arial", 40, QFont::Bold));
     header->setAlignment(Qt::AlignCenter);
-    header->setStyleSheet("color: #813e15; background-color: transparent; padding: 20px;");
+    header->setStyleSheet("color: #231f20; background-color: transparent; padding: 20px;");
+
+    QWidget* visualStrip = new QWidget();
+    visualStrip->setStyleSheet("background: transparent;");
+    QHBoxLayout* visualLayout = new QHBoxLayout(visualStrip);
+    visualLayout->setSpacing(14);
+    visualLayout->setContentsMargins(0, 0, 0, 0);
+
+    auto createVisualCard = [](const QString& icon, const QString& text) {
+        QWidget* card = new QWidget();
+        card->setStyleSheet(
+            "QWidget {"
+            "   background-color: #ffffff;"
+            "   border: 1px solid #f2d9de;"
+            "   border-radius: 22px;"
+            "}"
+        );
+        QVBoxLayout* cardLayout = new QVBoxLayout(card);
+        cardLayout->setContentsMargins(16, 14, 16, 14);
+        cardLayout->setSpacing(8);
+
+        QLabel* iconLabel = new QLabel(icon);
+        iconLabel->setAlignment(Qt::AlignCenter);
+        iconLabel->setStyleSheet("font-size: 36px; background: transparent; border: none;");
+
+        QLabel* textLabel = new QLabel(text);
+        textLabel->setAlignment(Qt::AlignCenter);
+        textLabel->setStyleSheet("color: #77676c; font-size: 13px; font-weight: 800; background: transparent; border: none;");
+
+        cardLayout->addWidget(iconLabel);
+        cardLayout->addWidget(textLabel);
+        return card;
+    };
 // made button style instead of doing each one separatly
     QString buttonStyle = 
         "QPushButton {"
-        "   background-color: #f4ece7;"
-        "   border: 2px solid #813e15;"
+        "   background-color: #ffffff;"
+        "   border: 2px solid #f2d9de;"
         "   border-radius: 28px;"
-        "   padding: 15px;"
+        "   padding: 17px 34px;"
         "   font-size: 18px;"
-        "   font-weight: bold;"
-        "   color: #ba6c3b;"
+        "   font-weight: 900;"
+        "   color: #231f20;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #e8cebe;"
-        "   border-color: #4b240c;"
+        "   background-color: #fff0f3;"
+        "   border-color: #f28fa0;"
+        "   color: #df6076;"
+        "}"
+        "QPushButton:pressed {"
+        "   background-color: #f9c5ce;"
         "}";
 
     QPushButton* signUpBtn = new QPushButton("Sign up");
@@ -114,6 +175,10 @@ void DeliveryModule::setupUI()
 
     layout->addStretch();
     layout->addWidget(header);
+    visualLayout->addWidget(createVisualCard("📦", "New orders"));
+    visualLayout->addWidget(createVisualCard("🛵", "Fast pickup"));
+    visualLayout->addWidget(createVisualCard("📍", "Live route"));
+    layout->addWidget(visualStrip);
     layout->addWidget(signUpBtn);
     layout->addWidget(notificationsBtn);
     layout->addWidget(pickupBtn);
@@ -138,34 +203,33 @@ void DeliveryModule::setupSignUpDialog()
     d->signUpDialog->setWindowTitle("Delivery Sign-Up");
     d->signUpDialog->setMinimumSize(400, 550);
     d->signUpDialog->setStyleSheet(
-        "QDialog { background-color: #f4ece7; }"
-        "QLabel { color: #4b240c; font-size: 14px; font-weight: 500; margin-top: 8px; }"
+        "QDialog { background-color: #fff6f8; }"
+        "QLabel { color: #231f20; font-size: 14px; font-weight: 800; margin-top: 8px; }"
         "QLineEdit {"
         "    background-color: #ffffff;"
-        "    color: #4b240c;"
-        "    padding: 10px;"
-        "    border: 2px solid #ba6c3b;"
-        "    border-radius: 15px;"
+        "    color: #231f20;"
+        "    padding: 12px;"
+        "    border: 2px solid #f2d9de;"
+        "    border-radius: 18px;"
         "    font-size: 13px;"
         "}"
-        "QLineEdit:focus { border: 2px solid #813e15; background-color: #fffaf7; }"
-        "QLineEdit:hover { border: 2px solid #813e15; }"
+        "QLineEdit:focus { border: 2px solid #f28fa0; background-color: #ffffff; }"
+        "QLineEdit:hover { border: 2px solid #f28fa0; }"
         "QPushButton {"
-        "    background-color: #f4ece7;"
-        "    border: 2px solid #813e15;"
+        "    background-color: #f28fa0;"
+        "    border: none;"
         "    border-radius: 28px;"
         "    padding: 12px;"
         "    font-size: 18px;"
-        "    font-weight: bold;"
-        "    color: #ba6c3b;"
+        "    font-weight: 900;"
+        "    color: #231f20;"
         "    margin-top: 20px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #e8cebe;"
-        "    border-color: #4b240c;"
-        "    color: #813e15;"
+        "    background-color: #df6076;"
+        "    color: #ffffff;"
         "}"
-        "QPushButton:pressed { background-color: #d4b89c; }"
+        "QPushButton:pressed { background-color: #c74f63; }"
     );
 
     QVBoxLayout* layout = new QVBoxLayout(d->signUpDialog);
@@ -287,6 +351,14 @@ void DeliveryModule::setupLoginDialog()
     d->loginDialog = new QDialog(this);
     d->loginDialog->setWindowTitle("Login");
     d->loginDialog->setMinimumSize(350, 200);
+    d->loginDialog->setStyleSheet(
+        "QDialog { background-color: #fff6f8; }"
+        "QLabel { color: #231f20; font-size: 15px; font-weight: 800; }"
+        "QLineEdit { background: white; border: 2px solid #f2d9de; border-radius: 18px; padding: 12px; color: #231f20; }"
+        "QLineEdit:focus { border-color: #f28fa0; }"
+        "QPushButton { background-color: #f28fa0; color: #231f20; border: none; border-radius: 22px; padding: 12px 24px; font-weight: 900; }"
+        "QPushButton:hover { background-color: #df6076; color: white; }"
+    );
 
     QVBoxLayout* layout = new QVBoxLayout(d->loginDialog);
 
@@ -346,22 +418,22 @@ void DeliveryModule::setupNotificationsDialog()
     d->notificationsDialog->setWindowTitle("Matching Delivery Requests");
     d->notificationsDialog->setMinimumSize(700, 600);
     d->notificationsDialog->setStyleSheet(
-        "QDialog { background-color: #f4ece7; }"
-        "QLabel { color: #4b240c; font-size: 14px; }"
-        "QListWidget { background-color: #ffffff; border: 2px solid #ba6c3b; border-radius: 10px; }"
-        "QListWidget::item { padding: 10px; border-bottom: 1px solid #e8cebe; }"
-        "QListWidget::item:hover { background-color: #e8cebe; }"
-        "QListWidget::item:selected { background-color: #ba6c3b; color: #ffffff; }"
-        "QTextEdit { background-color: #ffffff; border: 2px solid #ba6c3b; border-radius: 10px; }"
+        "QDialog { background-color: #fff6f8; }"
+        "QLabel { color: #231f20; font-size: 14px; font-weight: 700; }"
+        "QListWidget { background-color: #ffffff; border: 2px solid #f2d9de; border-radius: 18px; padding: 8px; }"
+        "QListWidget::item { padding: 12px; border-bottom: 1px solid #f2d9de; border-radius: 12px; }"
+        "QListWidget::item:hover { background-color: #fff0f3; }"
+        "QListWidget::item:selected { background-color: #f28fa0; color: #231f20; }"
+        "QTextEdit { background-color: #ffffff; border: 2px solid #f2d9de; border-radius: 18px; padding: 10px; color: #231f20; }"
         "QPushButton {"
-        "    background-color: #813e15;"
-        "    color: #ffffff;"
+        "    background-color: #f28fa0;"
+        "    color: #231f20;"
         "    border: none;"
-        "    border-radius: 8px;"
-        "    padding: 10px 20px;"
-        "    font-weight: bold;"
+        "    border-radius: 22px;"
+        "    padding: 11px 22px;"
+        "    font-weight: 900;"
         "}"
-        "QPushButton:hover { background-color: #ba6c3b; }"
+        "QPushButton:hover { background-color: #df6076; color: #ffffff; }"
         );
 
     QVBoxLayout* layout = new QVBoxLayout(d->notificationsDialog);
@@ -370,18 +442,18 @@ void DeliveryModule::setupNotificationsDialog()
 
     QLabel* titleLabel = new QLabel("📦 Matching Delivery Requests");
     titleLabel->setFont(QFont("Arial", 16, QFont::Bold));
-    titleLabel->setStyleSheet("color: #813e15;");
+    titleLabel->setStyleSheet("color: #df6076;");
     layout->addWidget(titleLabel);
 
     QLabel* instructionLabel = new QLabel("Select a request below to view details:");
-    instructionLabel->setStyleSheet("color: #4b240c;");
+    instructionLabel->setStyleSheet("color: #77676c;");
     layout->addWidget(instructionLabel);
 
     d->matchingDeliveriesList = new QListWidget();
     layout->addWidget(d->matchingDeliveriesList);
 
     QLabel* detailsLabel = new QLabel("Request Details:");
-    detailsLabel->setStyleSheet("color: #813e15; font-weight: bold;");
+    detailsLabel->setStyleSheet("color: #231f20; font-weight: bold;");
     layout->addWidget(detailsLabel);
 
     d->deliveryDetailsText = new QTextEdit();
@@ -583,17 +655,18 @@ void DeliveryModule::addLogoutButton()
     logoutBtn->setCursor(Qt::PointingHandCursor);
     logoutBtn->setStyleSheet(
         "QPushButton {"
-        "   background-color: #d4a373;"
-        "   border: 2px solid #813e15;"
+        "   background-color: #ffffff;"
+        "   border: 2px solid #f2d9de;"
         "   border-radius: 28px;"
         "   padding: 10px;"
         "   font-size: 14px;"
-        "   font-weight: bold;"
-        "   color: #ffffff;"
+        "   font-weight: 900;"
+        "   color: #df6076;"
         "   margin-top: 20px;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #ba6c3b;"
+        "   background-color: #fff0f3;"
+        "   border-color: #f28fa0;"
         "}"
     );
     
@@ -733,7 +806,8 @@ void DeliveryModule::handlePickup()
     QNetworkReply* pickupReply = manager->post(request, pickupData);
 
     connect(pickupReply, &QNetworkReply::finished, [this, pickupReply,
-                                                    dropAddress, manager, request]() {
+                                                    dropAddress, manager, request,
+                                                    acceptedOrderId]() {
 
         QByteArray pickupResponse = pickupReply->readAll();
         QJsonObject pickupCoords = QJsonDocument::fromJson(pickupResponse).object();
@@ -757,7 +831,8 @@ void DeliveryModule::handlePickup()
         QNetworkReply* dropReply = manager->post(request, dropData);
 
         connect(dropReply, &QNetworkReply::finished, [this, dropReply,
-                                                      pickupLat, pickupLng]() {
+                                                      pickupLat, pickupLng,
+                                                      acceptedOrderId]() {
 
             QByteArray dropResponse = dropReply->readAll();
             QJsonObject dropCoords = QJsonDocument::fromJson(dropResponse).object();
@@ -781,12 +856,31 @@ void DeliveryModule::handlePickup()
                 return;
             }
 
-            // open map with both coordinates
+            // Send job coords to server so driver_live.html can fetch them
+            QNetworkAccessManager* orderManager = new QNetworkAccessManager(this);
+            QNetworkRequest orderRequest(QUrl("http://localhost:3000/order"));
+            orderRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+            QJsonObject orderJson;
+            orderJson["delivery_id"] = acceptedOrderId;
+            orderJson["pickup_lat"]  = pickupLat;
+            orderJson["pickup_lng"]  = pickupLng;
+            orderJson["drop_lat"]    = dropLat;
+            orderJson["drop_lng"]    = dropLng;
+
+            QNetworkReply* orderReply = orderManager->post(
+                orderRequest, QJsonDocument(orderJson).toJson());
+            connect(orderReply, &QNetworkReply::finished,
+                    orderReply, &QNetworkReply::deleteLater);
+
             QString mapUrl = QString(
-                                 "http://localhost:8000/map.html"
-                                 "?pickupLat=%1&pickupLng=%2"
-                                 "&dropLat=%3&dropLng=%4"
-                                 ).arg(pickupLat).arg(pickupLng)
+                                 "http://localhost:3000/map_view.html"
+                                 "?deliveryId=%1"
+                                 "&pickupLat=%2&pickupLng=%3"
+                                 "&dropLat=%4&dropLng=%5"
+                                 "&apiKey=AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk"
+                                 ).arg(acceptedOrderId)
+                                 .arg(pickupLat).arg(pickupLng)
                                  .arg(dropLat).arg(dropLng);
 
             
