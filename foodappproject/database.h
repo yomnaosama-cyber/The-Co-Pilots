@@ -19,6 +19,7 @@ private:
     static void createOrganizationsTable();
     static void createFoodDonationsTable();
     static void createAddressesTable();
+static void createProviderSafetyChecksTable();
     static int extractMealCount(const QString& details);
 };
 

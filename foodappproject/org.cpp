@@ -14,7 +14,8 @@
 #include <QSqlError>
 #include <QFont>
 #include <QSettings>
-
+#include <QFileDialog>
+#include <QScrollArea>
 class OrgModulePrivate {
 public:
     QStackedWidget *stack = nullptr;
@@ -45,6 +46,14 @@ public:
     QLineEdit *donationStreet = nullptr;
     QLineEdit *donationAddressDetails = nullptr;
     QComboBox *deliveryMethod = nullptr;
+// Safety check fields
+QLineEdit *foodAge = nullptr;
+QTextEdit *ingredients = nullptr;
+QLineEdit *storageLocation = nullptr;
+QLineEdit *storageTemperature = nullptr;
+QLineEdit *allergenInfo = nullptr;
+QTextEdit *safetyNotes = nullptr;
+QLineEdit *photoPath = nullptr;
 };
 
 OrgModule::OrgModule(QWidget *parent)
@@ -282,8 +291,12 @@ void OrgModule::setupOrganizationPage()
 
 void OrgModule::setupDonationPage()
 {
-    QWidget* page = new QWidget();
-    QVBoxLayout* layout = new QVBoxLayout(page);
+    QScrollArea* scrollArea = new QScrollArea();
+scrollArea->setWidgetResizable(true);
+scrollArea->setStyleSheet("QScrollArea { border: none; background: transparent; }");
+
+QWidget* page = new QWidget();
+QVBoxLayout* layout = new QVBoxLayout(page);
     QFormLayout* form = new QFormLayout();
     layout->setContentsMargins(18, 14, 18, 14);
     layout->setSpacing(10);
@@ -303,7 +316,15 @@ void OrgModule::setupDonationPage()
     d->donationAddressDetails = new QLineEdit();
     d->donationAddressDetails->setPlaceholderText("e.g. Building 5, Floor 3");
     d->deliveryMethod = new QComboBox();
-
+d->foodAge = new QLineEdit();
+d->ingredients = new QTextEdit();
+d->ingredients->setFixedHeight(80);
+d->storageLocation = new QLineEdit();
+d->storageTemperature = new QLineEdit();
+d->allergenInfo = new QLineEdit();
+d->safetyNotes = new QTextEdit();
+d->safetyNotes->setFixedHeight(80);
+d->photoPath = new QLineEdit();
     d->providerRole->addItems({"Restaurant", "Organization"});
     d->deliveryMethod->addItems({"Pickup", "Delivery", "Either"});
 
@@ -328,7 +349,29 @@ void OrgModule::setupDonationPage()
     form->addRow("Street:", d->donationStreet);
     form->addRow("Building/Details:", d->donationAddressDetails);
     form->addRow("Delivery Method:", d->deliveryMethod);
+form->addRow("How long ago was food made?", d->foodAge);
+form->addRow("Ingredients:", d->ingredients);
+form->addRow("Where was it stored?", d->storageLocation);
+form->addRow("Storage temperature:", d->storageTemperature);
+form->addRow("Allergen info:", d->allergenInfo);
+form->addRow("Safety notes:", d->safetyNotes);
+QPushButton *photoButton = new QPushButton("Upload Photo");
+QHBoxLayout *photoLayout = new QHBoxLayout();
+photoLayout->addWidget(d->photoPath);
+photoLayout->addWidget(photoButton);
+form->addRow("Photo path:", photoLayout);
 
+connect(photoButton, &QPushButton::clicked, this, [this]() {
+    QString fileName = QFileDialog::getOpenFileName(
+        this,
+        "Select Food Photo",
+        "",
+        "Images (*.png *.jpg *.jpeg *.bmp)"
+    );
+    if (!fileName.isEmpty()) {
+        d->photoPath->setText(fileName);
+    }
+});
     QPushButton* submitBtn = new QPushButton("Submit Donation Details");
     submitBtn->setMinimumSize(260, 44);
     submitBtn->setCursor(Qt::PointingHandCursor);
@@ -336,7 +379,8 @@ void OrgModule::setupDonationPage()
 
     layout->addLayout(form);
     layout->addWidget(submitBtn, 0, Qt::AlignCenter);
-    d->stack->addWidget(page);
+    scrollArea->setWidget(page);
+d->stack->addWidget(scrollArea);
 }
 
 void OrgModule::onRestaurantTab()
@@ -463,7 +507,22 @@ void OrgModule::submitDonation()
         QMessageBox::warning(this, "Invalid Amount", "Please enter a valid number of meals.");
         return;
     }
-    
+    QSqlQuery safetyQuery;
+safetyQuery.prepare("INSERT INTO provider_safety_checks "
+    "(provider_name, provider_role, food_age, ingredients, storage_location, "
+    "storage_temperature, allergen_info, safety_notes, photo_path) "
+    "VALUES (:provider_name, :provider_role, :food_age, :ingredients, "
+    ":storage_location, :storage_temperature, :allergen_info, :safety_notes, :photo_path)");
+safetyQuery.bindValue(":provider_name", d->providerName->text().trimmed());
+safetyQuery.bindValue(":provider_role", d->providerRole->currentText());
+safetyQuery.bindValue(":food_age", d->foodAge->text().trimmed());
+safetyQuery.bindValue(":ingredients", d->ingredients->toPlainText().trimmed());
+safetyQuery.bindValue(":storage_location", d->storageLocation->text().trimmed());
+safetyQuery.bindValue(":storage_temperature", d->storageTemperature->text().trimmed());
+safetyQuery.bindValue(":allergen_info", d->allergenInfo->text().trimmed());
+safetyQuery.bindValue(":safety_notes", d->safetyNotes->toPlainText().trimmed());
+safetyQuery.bindValue(":photo_path", d->photoPath->text().trimmed());
+safetyQuery.exec();
     QSqlQuery query;
     query.prepare("INSERT INTO food_donations "
                   "(provider_name, provider_role, food_amount, remaining_meals, "
@@ -508,6 +567,13 @@ void OrgModule::submitDonation()
         d->donationCity->clear();
         d->donationStreet->clear();
         d->donationAddressDetails->clear();
+d->foodAge->clear();
+d->ingredients->clear();
+d->storageLocation->clear();
+d->storageTemperature->clear();
+d->allergenInfo->clear();
+d->safetyNotes->clear();
+d->photoPath->clear();
     } else {
         QMessageBox::critical(this, "Database Error", query.lastError().text());
     }

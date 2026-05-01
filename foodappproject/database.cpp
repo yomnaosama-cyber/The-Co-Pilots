@@ -22,6 +22,7 @@ bool DatabaseManager::initDatabase() {
     createRestaurantsTable();
     createOrganizationsTable();
     createFoodDonationsTable();
+createProviderSafetyChecksTable();
     createAddressesTable();
 
     return true;
@@ -287,4 +288,19 @@ int DatabaseManager::extractMealCount(const QString& details) {
         return match.captured(1).toInt();
     }
     return 0;
+}
+void DatabaseManager::createProviderSafetyChecksTable() {
+    QSqlQuery query;
+    query.exec("CREATE TABLE IF NOT EXISTS provider_safety_checks ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+               "provider_name TEXT NOT NULL, "
+               "provider_role TEXT NOT NULL, "
+               "food_age TEXT NOT NULL, "
+               "ingredients TEXT NOT NULL, "
+               "storage_location TEXT NOT NULL, "
+               "storage_temperature TEXT, "
+               "allergen_info TEXT, "
+               "safety_notes TEXT, "
+               "photo_path TEXT, "
+               "check_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
 }
