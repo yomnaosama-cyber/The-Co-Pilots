@@ -246,6 +246,13 @@ void DatabaseManager::matchAddresses() {
             updateDelivered.bindValue(":meal_id", mealId);
             updateDelivered.exec();
 
+            QSqlQuery checkComplete;
+            checkComplete.prepare("UPDATE meal_requests SET match_status = 'completed' "
+                                  "WHERE person_id = (SELECT person_id FROM all_addresses WHERE id = :meal_id) "
+                                  "AND delivered_meals >= meal_count");
+            checkComplete.bindValue(":meal_id", mealId);
+            checkComplete.exec();
+
             qDebug() << "Matched - Meal:" << personName 
                      << "with Donation:" << bestMatchProvider
                      << "| City:" << mealCity 
