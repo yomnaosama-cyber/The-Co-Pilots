@@ -101,6 +101,7 @@ void DatabaseManager::createFoodDonationsTable() {
                "donation_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
     query.exec("ALTER TABLE food_donations ADD COLUMN remaining_meals INTEGER DEFAULT 0");
 }
+
 void DatabaseManager::createAddressesTable() {
     QSqlQuery query;
 query.exec("CREATE TABLE IF NOT EXISTS all_addresses ("
