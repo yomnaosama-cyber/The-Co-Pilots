@@ -15,6 +15,7 @@ set(PROJECT_SOURCES
     main.cpp
     mainwindow.cpp
     mainwindow.h
+    mainwindow.ui
     database.cpp
     database.h
     delivery.cpp

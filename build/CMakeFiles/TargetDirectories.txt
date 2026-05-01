@@ -1,0 +1,9 @@
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/untitled2.dir
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/edit_cache.dir
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/rebuild_cache.dir
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/list_install_components.dir
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/install.dir
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/install/local.dir
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/install/strip.dir
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/untitled2_autogen_timestamp_deps.dir
+/home/joy_tamer17/The-Co-Pilots/build/CMakeFiles/untitled2_autogen.dir
