@@ -61,35 +61,35 @@ OrgModule::~OrgModule()
 void OrgModule::setupUI()
 {
     setWindowTitle("Provider Registration");
-    setMinimumSize(560, 620);
+    setMinimumSize(900, 740);
     setStyleSheet(
-        "QDialog { background-color: #fff6f8; }"
-        "QLabel { color: #231f20; font-size: 14px; font-weight: 800; }"
+        "QDialog { background-color: #fffdf8; }"
+        "QLabel { color: #20242a; font-size: 14px; font-weight: 800; }"
         "QLineEdit, QTextEdit, QComboBox {"
         "    background-color: white;"
-        "    color: #231f20;"
-        "    border: 2px solid #f2d9de;"
+        "    color: #20242a;"
+        "    border: 2px solid #e7eaee;"
         "    border-radius: 16px;"
         "    padding: 10px;"
         "}"
         "QLineEdit:focus, QTextEdit:focus, QComboBox:focus {"
-        "    border: 2px solid #f28fa0;"
+        "    border: 2px solid #ef3038;"
         "}"
         "QStackedWidget {"
         "    background-color: #ffffff;"
-        "    border: 1px solid #f2d9de;"
+        "    border: 1px solid #e7eaee;"
         "    border-radius: 24px;"
         "}"
         "QPushButton {"
-        "    background-color: #f28fa0;"
-        "    color: #231f20;"
+        "    background-color: #ef3038;"
+        "    color: #20242a;"
         "    border: none;"
         "    border-radius: 22px;"
         "    padding: 11px 18px;"
         "    font-weight: 900;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #df6076;"
+        "    background-color: #d92731;"
         "    color: #ffffff;"
         "}"
     );
@@ -100,7 +100,7 @@ void OrgModule::setupUI()
 
     QLabel* title = new QLabel("Community Food Connect");
     title->setAlignment(Qt::AlignCenter);
-    title->setStyleSheet("font-size: 28px; font-weight: 900; color: #231f20;");
+    title->setStyleSheet("font-size: 28px; font-weight: 900; color: #20242a;");
     mainLayout->addWidget(title);
 
     QWidget* providerPictures = new QWidget();
@@ -114,7 +114,7 @@ void OrgModule::setupUI()
         card->setStyleSheet(
             "QWidget {"
             "   background-color: #ffffff;"
-            "   border: 1px solid #f2d9de;"
+            "   border: 1px solid #e7eaee;"
             "   border-radius: 20px;"
             "}"
         );
@@ -122,26 +122,32 @@ void OrgModule::setupUI()
         cardLayout->setContentsMargins(12, 10, 12, 10);
         cardLayout->setSpacing(5);
         QLabel* iconLabel = new QLabel(icon);
+        iconLabel->setFixedSize(48, 48);
         iconLabel->setAlignment(Qt::AlignCenter);
-        iconLabel->setStyleSheet("font-size: 30px; background: transparent; border: none;");
+        iconLabel->setStyleSheet("font-size: 17px; font-weight: 900; color: white; background: #ff9d18; border-radius: 24px;");
         QLabel* textLabel = new QLabel(label);
+        textLabel->setWordWrap(true);
+        textLabel->setMinimumHeight(32);
         textLabel->setAlignment(Qt::AlignCenter);
-        textLabel->setStyleSheet("color: #77676c; font-size: 12px; font-weight: 800; background: transparent; border: none;");
-        cardLayout->addWidget(iconLabel);
+        textLabel->setStyleSheet("color: #68707a; font-size: 12px; font-weight: 800; background: transparent; border: none;");
+        cardLayout->addWidget(iconLabel, 0, Qt::AlignCenter);
         cardLayout->addWidget(textLabel);
         return card;
     };
 
-    providerPictureLayout->addWidget(createProviderPicture("🍽️", "Restaurants"));
-    providerPictureLayout->addWidget(createProviderPicture("🤝", "Organizations"));
-    providerPictureLayout->addWidget(createProviderPicture("🚚", "Donations"));
+    providerPictureLayout->addWidget(createProviderPicture("01", "Restaurants"));
+    providerPictureLayout->addWidget(createProviderPicture("02", "Organizations"));
+    providerPictureLayout->addWidget(createProviderPicture("03", "Donations"));
     mainLayout->addWidget(providerPictures);
 
     // Tab buttons
     QHBoxLayout* switchLayout = new QHBoxLayout();
     QPushButton* restaurantBtn = new QPushButton("Restaurant");
     QPushButton* organizationBtn = new QPushButton("Organization");
-    QPushButton* donateBtn = new QPushButton("Donate Food Details");
+    QPushButton* donateBtn = new QPushButton("Donation Details");
+    restaurantBtn->setMinimumWidth(160);
+    organizationBtn->setMinimumWidth(180);
+    donateBtn->setMinimumWidth(190);
 
     switchLayout->addWidget(restaurantBtn);
     switchLayout->addWidget(organizationBtn);
@@ -149,6 +155,7 @@ void OrgModule::setupUI()
     mainLayout->addLayout(switchLayout);
 
     d->stack = new QStackedWidget(this);
+    d->stack->setMinimumHeight(460);
     mainLayout->addWidget(d->stack);
 
     setupRestaurantPage();
@@ -167,6 +174,11 @@ void OrgModule::setupRestaurantPage()
     QWidget* page = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(page);
     QFormLayout* form = new QFormLayout();
+    layout->setContentsMargins(18, 14, 18, 14);
+    layout->setSpacing(10);
+    form->setSpacing(8);
+    form->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+    form->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     d->resName = new QLineEdit();
     d->resCity = new QLineEdit();
@@ -183,6 +195,17 @@ void OrgModule::setupRestaurantPage()
         "Restaurant Meals", "Vegetarian", "Other"
     });
 
+    for (QLineEdit* field : {
+             d->resName,
+             d->resCity,
+             d->resStreet,
+             d->resAddressDetails,
+             d->resContact
+         }) {
+        field->setMinimumHeight(42);
+    }
+    d->resFoodType->setMinimumHeight(42);
+
     form->addRow("Restaurant Name:", d->resName);
     form->addRow("City:", d->resCity);
     form->addRow("Street:", d->resStreet);
@@ -191,10 +214,12 @@ void OrgModule::setupRestaurantPage()
     form->addRow("Contact Info:", d->resContact);
 
     QPushButton* submitBtn = new QPushButton("Register Restaurant");
+    submitBtn->setMinimumSize(240, 44);
+    submitBtn->setCursor(Qt::PointingHandCursor);
     connect(submitBtn, &QPushButton::clicked, this, &OrgModule::submitRestaurant);
 
     layout->addLayout(form);
-    layout->addWidget(submitBtn);
+    layout->addWidget(submitBtn, 0, Qt::AlignCenter);
     d->stack->addWidget(page);
 }
 void OrgModule::setupOrganizationPage()
@@ -202,6 +227,11 @@ void OrgModule::setupOrganizationPage()
     QWidget* page = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(page);
     QFormLayout* form = new QFormLayout();
+    layout->setContentsMargins(18, 14, 18, 14);
+    layout->setSpacing(10);
+    form->setSpacing(8);
+    form->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+    form->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     d->orgName = new QLineEdit();
     d->orgType = new QComboBox();
@@ -219,6 +249,18 @@ void OrgModule::setupOrganizationPage()
         "Mosque", "NGO", "Shelter", "Other"
     });
 
+    for (QLineEdit* field : {
+             d->orgName,
+             d->orgCity,
+             d->orgStreet,
+             d->orgAddressDetails,
+             d->orgContact
+         }) {
+        field->setMinimumHeight(42);
+    }
+    d->orgType->setMinimumHeight(42);
+    d->orgPurpose->setMinimumHeight(72);
+
     form->addRow("Organization Name:", d->orgName);
     form->addRow("Organization Type:", d->orgType);
     form->addRow("City:", d->orgCity);
@@ -228,10 +270,12 @@ void OrgModule::setupOrganizationPage()
     form->addRow("Contact Info:", d->orgContact);
 
     QPushButton* submitBtn = new QPushButton("Register Organization");
+    submitBtn->setMinimumSize(250, 44);
+    submitBtn->setCursor(Qt::PointingHandCursor);
     connect(submitBtn, &QPushButton::clicked, this, &OrgModule::submitOrganization);
 
     layout->addLayout(form);
-    layout->addWidget(submitBtn);
+    layout->addWidget(submitBtn, 0, Qt::AlignCenter);
     d->stack->addWidget(page);
 }
 
@@ -241,6 +285,12 @@ void OrgModule::setupDonationPage()
     QWidget* page = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(page);
     QFormLayout* form = new QFormLayout();
+    layout->setContentsMargins(18, 14, 18, 14);
+    layout->setSpacing(10);
+    form->setSpacing(8);
+    form->setContentsMargins(0, 0, 0, 0);
+    form->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+    form->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     d->providerName = new QLineEdit();
     d->providerRole = new QComboBox();
@@ -257,6 +307,19 @@ void OrgModule::setupDonationPage()
     d->providerRole->addItems({"Restaurant", "Organization"});
     d->deliveryMethod->addItems({"Pickup", "Delivery", "Either"});
 
+    for (QLineEdit* field : {
+             d->providerName,
+             d->foodAmount,
+             d->donationType,
+             d->donationCity,
+             d->donationStreet,
+             d->donationAddressDetails
+         }) {
+        field->setMinimumHeight(42);
+    }
+    d->providerRole->setMinimumHeight(42);
+    d->deliveryMethod->setMinimumHeight(42);
+
     form->addRow("Provider Name:", d->providerName);
     form->addRow("Provider Type:", d->providerRole);
     form->addRow("Amount of Food:", d->foodAmount);
@@ -267,10 +330,12 @@ void OrgModule::setupDonationPage()
     form->addRow("Delivery Method:", d->deliveryMethod);
 
     QPushButton* submitBtn = new QPushButton("Submit Donation Details");
+    submitBtn->setMinimumSize(260, 44);
+    submitBtn->setCursor(Qt::PointingHandCursor);
     connect(submitBtn, &QPushButton::clicked, this, &OrgModule::submitDonation);
 
     layout->addLayout(form);
-    layout->addWidget(submitBtn);
+    layout->addWidget(submitBtn, 0, Qt::AlignCenter);
     d->stack->addWidget(page);
 }
 
@@ -454,21 +519,22 @@ void OrgModule::addLogoutButton()
     if (!mainLayout) return;
     
     QPushButton* logoutBtn = new QPushButton("Logout & Switch Account");
+    logoutBtn->setMinimumWidth(260);
     logoutBtn->setCursor(Qt::PointingHandCursor);
     logoutBtn->setStyleSheet(
         "QPushButton {"
         "   background-color: #ffffff;"
-        "   border: 2px solid #f2d9de;"
+        "   border: 2px solid #e7eaee;"
         "   border-radius: 28px;"
         "   padding: 10px;"
         "   font-size: 14px;"
         "   font-weight: 900;"
-        "   color: #df6076;"
+        "   color: #d92731;"
         "   margin-top: 20px;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #fff0f3;"
-        "   border-color: #f28fa0;"
+        "   background-color: #fff0e6;"
+        "   border-color: #ef3038;"
         "}"
     );
     

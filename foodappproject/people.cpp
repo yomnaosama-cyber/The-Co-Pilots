@@ -46,89 +46,100 @@ PeopleModule::~PeopleModule()
 void PeopleModule::setupUI()
 {
     setWindowTitle("People in Need");
-    setMinimumSize(800, 600);
-    setStyleSheet("QMainWindow { background-color: #fff6f8; }");
+    setMinimumSize(900, 680);
+    setStyleSheet("QMainWindow { background-color: #fffdf8; }");
 
     QWidget* central = new QWidget();
     setCentralWidget(central);
 
     QVBoxLayout* layout = new QVBoxLayout(central);
-    layout->setAlignment(Qt::AlignCenter);
-    layout->setSpacing(28);
+    layout->setAlignment(Qt::AlignHCenter);
+    layout->setSpacing(24);
     layout->setContentsMargins(44, 34, 44, 34);
 
-    QLabel* header = new QLabel("Request Meals and Assistance");
+    QLabel* header = new QLabel("People in Need");
     header->setFont(QFont("Arial", 40, QFont::Bold));
     header->setAlignment(Qt::AlignCenter);
-    header->setStyleSheet("color: #231f20; background-color: transparent; padding: 20px;");
+    header->setStyleSheet("color: #20242a; background-color: transparent; padding: 20px;");
 
     QWidget* foodPictures = new QWidget();
     foodPictures->setStyleSheet("background: transparent;");
     QHBoxLayout* foodLayout = new QHBoxLayout(foodPictures);
-    foodLayout->setSpacing(18);
+    foodLayout->setSpacing(14);
     foodLayout->setContentsMargins(0, 0, 0, 0);
 
-    auto createFoodPicture = [](const QString& icon, const QString& label) {
+    auto createFoodPicture = [](const QString& label, const QString& color) {
         QWidget* card = new QWidget();
-        card->setFixedSize(150, 128);
+        card->setMinimumSize(170, 132);
         card->setStyleSheet(
             "QWidget {"
             "   background-color: #ffffff;"
-            "   border: 1px solid #f2d9de;"
+            "   border: 1px solid #e7eaee;"
             "   border-radius: 24px;"
             "}"
         );
         QVBoxLayout* cardLayout = new QVBoxLayout(card);
         cardLayout->setContentsMargins(14, 12, 14, 12);
-        QLabel* iconLabel = new QLabel(icon);
-        iconLabel->setAlignment(Qt::AlignCenter);
-        iconLabel->setStyleSheet("font-size: 42px; background: transparent; border: none;");
+        QLabel* photoLabel = new QLabel(card);
+        photoLabel->setFixedSize(118, 66);
+        photoLabel->setStyleSheet(
+            "background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #fff8e9, stop:0.45 #ffc66d, stop:1 #cf5838);"
+            "border-radius: 18px;"
+        );
+        QLabel* plate = new QLabel(photoLabel);
+        plate->setGeometry(32, 11, 54, 44);
+        plate->setStyleSheet("background-color: #fffdf8; border-radius: 22px;");
+        QLabel* food = new QLabel(plate);
+        food->setGeometry(13, 10, 28, 22);
+        food->setStyleSheet(QString("background-color: %1; border-radius: 11px;").arg(color));
         QLabel* textLabel = new QLabel(label);
+        textLabel->setWordWrap(true);
+        textLabel->setMinimumHeight(34);
         textLabel->setAlignment(Qt::AlignCenter);
-        textLabel->setStyleSheet("color: #77676c; font-size: 13px; font-weight: 800; background: transparent; border: none;");
-        cardLayout->addWidget(iconLabel);
+        textLabel->setStyleSheet("color: #68707a; font-size: 13px; font-weight: 800; background: transparent; border: none;");
+        cardLayout->addWidget(photoLabel, 0, Qt::AlignCenter);
         cardLayout->addWidget(textLabel);
         return card;
     };
 
-    QString largeButtonStyle =
+    foodLayout->addWidget(createFoodPicture("Warm meals", "#20a675"));
+    foodLayout->addWidget(createFoodPicture("Fresh plates", "#ef3038"));
+    foodLayout->addWidget(createFoodPicture("Daily food", "#ff9d18"));
+
+    QString buttonStyle =
         "QPushButton {"
         "   background-color: #ffffff;"
-        "   border: 2px solid #f2d9de;"
-        "   border-radius: 30px;"
-        "   padding: 18px;"
-        "   font-size: 30px;"
+        "   border: 2px solid #e7eaee;"
+        "   border-radius: 28px;"
+        "   padding: 17px 34px;"
+        "   font-size: 18px;"
         "   font-weight: 900;"
-        "   color: #231f20;"
+        "   color: #20242a;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #fff0f3;"
-        "   border-color: #f28fa0;"
-        "   color: #df6076;"
+        "   background-color: #fff0e6;"
+        "   border-color: #ef3038;"
+        "   color: #d92731;"
         "}"
         "QPushButton:pressed {"
-        "   background-color: #f9c5ce;"
+        "   background-color: #ffe9d9;"
         "}";
 
     QPushButton* signupBtn = new QPushButton("Sign Up");
-    signupBtn->setFixedSize(500, 200);
+    signupBtn->setMinimumWidth(320);
+    signupBtn->setStyleSheet(buttonStyle);
     signupBtn->setCursor(Qt::PointingHandCursor);
-    signupBtn->setStyleSheet(largeButtonStyle);
 
     QPushButton* requestBtn = new QPushButton("Request Meals");
-    requestBtn->setFixedSize(500, 200);
+    requestBtn->setMinimumWidth(320);
+    requestBtn->setStyleSheet(buttonStyle);
     requestBtn->setCursor(Qt::PointingHandCursor);
-    requestBtn->setStyleSheet(largeButtonStyle);
 
+    layout->addStretch();
     layout->addWidget(header);
-    foodLayout->addWidget(createFoodPicture("🍲", "Warm meals"));
-    foodLayout->addWidget(createFoodPicture("🥗", "Fresh plates"));
-    foodLayout->addWidget(createFoodPicture("🥖", "Daily food"));
     layout->addWidget(foodPictures, 0, Qt::AlignCenter);
-    layout->addStretch();
-    layout->addWidget(signupBtn, 0, Qt::AlignCenter);
-    layout->addStretch();
-    layout->addWidget(requestBtn, 0, Qt::AlignCenter);
+    layout->addWidget(signupBtn);
+    layout->addWidget(requestBtn);
     layout->addStretch();
 
     setupSignUpDialog();
@@ -144,59 +155,57 @@ void PeopleModule::setupSignUpDialog()
 {
     d->signwindow = new QMainWindow();
     d->signwindow->setWindowTitle("Sign Up for Assistance");
-    d->signwindow->setMinimumSize(600, 400);
+    d->signwindow->setMinimumSize(620, 650);
     d->signwindow->setStyleSheet(
-        "QMainWindow { background-color: #fff6f8; }"
-        "QLabel { color: #231f20; font-weight: 800; }"
-        "QLineEdit { background: white; border: 2px solid #f2d9de; border-radius: 18px; padding: 12px; color: #231f20; }"
-        "QLineEdit:focus { border-color: #f28fa0; }"
-        "QPushButton { background-color: #f28fa0; color: #231f20; border: none; border-radius: 24px; padding: 12px 24px; font-weight: 900; }"
-        "QPushButton:hover { background-color: #df6076; color: white; }"
+        "QMainWindow { background-color: #fffdf8; }"
+        "QLabel { color: #20242a; font-size: 15px; font-weight: 800; }"
+        "QLineEdit { background: white; border: 2px solid #e7eaee; border-radius: 18px; padding: 12px 14px; color: #20242a; font-size: 16px; }"
+        "QLineEdit:focus { border-color: #ef3038; }"
+        "QPushButton { background-color: #ef3038; color: #20242a; border: none; border-radius: 24px; padding: 13px 26px; font-size: 16px; font-weight: 900; }"
+        "QPushButton:hover { background-color: #d92731; color: white; }"
     );
 
     QWidget* central = new QWidget();
     d->signwindow->setCentralWidget(central);
 
     QVBoxLayout* layout = new QVBoxLayout(central);
-    layout->setAlignment(Qt::AlignCenter);
-    layout->setSpacing(30);
+    layout->setAlignment(Qt::AlignHCenter);
+    layout->setSpacing(12);
+    layout->setContentsMargins(38, 30, 38, 30);
 
     // Name
     QLabel* nameLabel = new QLabel("Enter Your Name:");
-    nameLabel->setFont(QFont("Arial", 18, QFont::Bold));
     d->peoplename = new QLineEdit();
     d->peoplename->setPlaceholderText("Your Name");
-    d->peoplename->setStyleSheet("font-size: 18px;");
+    d->peoplename->setMinimumSize(500, 52);
 
     // ID
     QLabel* idLabel = new QLabel("Enter Your ID:");
-    idLabel->setFont(QFont("Arial", 18, QFont::Bold));
     d->peopleid = new QLineEdit();
     d->peopleid->setPlaceholderText("Your ID");
-    d->peopleid->setStyleSheet("font-size: 18px;");
+    d->peopleid->setMinimumSize(500, 52);
 
-    QLabel* addressLabelLabel = new QLabel("Enter Your Adress:");
-    addressLabelLabel->setFont(QFont("Arial", 18, QFont::Bold));
+    QLabel* addressLabelLabel = new QLabel("Enter Your Address:");
     d->peopleaddress1 = new QLineEdit();
     d->peopleaddress1->setPlaceholderText("Your Address");
-    d->peopleaddress1->setStyleSheet("font-size: 18px;");
+    d->peopleaddress1->setMinimumSize(500, 52);
 
     // Contact
     QLabel* contactLabel = new QLabel("Enter Your Contact Info:");
-    contactLabel->setFont(QFont("Arial", 18, QFont::Bold));
     d->peoplecontact = new QLineEdit();
     d->peoplecontact->setPlaceholderText("Your Contact Info");
-    d->peoplecontact->setStyleSheet("font-size: 18px;");
+    d->peoplecontact->setMinimumSize(500, 52);
 
     // Notes
-    QLabel* noteLabel = new QLabel("Enter any additional notes or dietary restrictions:");
-    noteLabel->setFont(QFont("Arial", 18, QFont::Bold));
+    QLabel* noteLabel = new QLabel("Additional notes or dietary restrictions:");
+    noteLabel->setWordWrap(true);
+    noteLabel->setMinimumWidth(500);
     d->peoplenote = new QLineEdit();
     d->peoplenote->setPlaceholderText("Additional Notes");
-    d->peoplenote->setStyleSheet("font-size: 18px;");
+    d->peoplenote->setMinimumSize(500, 52);
 
     QPushButton* submitBtn = new QPushButton("Submit");
-    submitBtn->setFixedSize(150, 50);
+    submitBtn->setMinimumSize(180, 52);
     submitBtn->setCursor(Qt::PointingHandCursor);
 
     layout->addWidget(nameLabel);
@@ -218,49 +227,47 @@ void PeopleModule::setupMealRequestDialog()
 {
     d->mealDialog = new QDialog(this);
     d->mealDialog->setWindowTitle("Request Meals");
-    d->mealDialog->setMinimumSize(400, 200);
+    d->mealDialog->setMinimumSize(560, 560);
     d->mealDialog->setStyleSheet(
-        "QDialog { background-color: #fff6f8; }"
-        "QLabel { color: #231f20; font-weight: 800; }"
-        "QLineEdit { background: white; border: 2px solid #f2d9de; border-radius: 18px; padding: 12px; color: #231f20; }"
-        "QLineEdit:focus { border-color: #f28fa0; }"
-        "QPushButton { background-color: #f28fa0; color: #231f20; border: none; border-radius: 24px; padding: 12px 24px; font-weight: 900; }"
-        "QPushButton:hover { background-color: #df6076; color: white; }"
+        "QDialog { background-color: #fffdf8; }"
+        "QLabel { color: #20242a; font-size: 15px; font-weight: 800; }"
+        "QLineEdit { background: white; border: 2px solid #e7eaee; border-radius: 18px; padding: 12px 14px; color: #20242a; font-size: 16px; }"
+        "QLineEdit:focus { border-color: #ef3038; }"
+        "QPushButton { background-color: #ef3038; color: #20242a; border: none; border-radius: 24px; padding: 13px 26px; font-size: 16px; font-weight: 900; }"
+        "QPushButton:hover { background-color: #d92731; color: white; }"
     );
 
     QVBoxLayout* layout = new QVBoxLayout(d->mealDialog);
+    layout->setSpacing(12);
+    layout->setContentsMargins(34, 28, 34, 28);
 
     QLabel* mealLabel = new QLabel("How many meals do you need?");
     mealLabel->setFont(QFont("Arial", 18, QFont::Bold));
     mealLabel->setAlignment(Qt::AlignCenter);
-    mealLabel->setStyleSheet("color: #231f20;");
+    mealLabel->setStyleSheet("color: #20242a;");
 
     d->mealNumberLine = new QLineEdit();
-    d->mealNumberLine->setPlaceholderText("Enter number of meals in numerals");
-    d->mealNumberLine->setMinimumHeight(60);
+    d->mealNumberLine->setPlaceholderText("Number of meals");
+    d->mealNumberLine->setMinimumSize(480, 52);
     d->mealNumberLine->setAlignment(Qt::AlignCenter);
-    d->mealNumberLine->setStyleSheet("font-size: 18px;");
 
     QLabel* cityLabel = new QLabel("Enter Your City:");
-    cityLabel->setStyleSheet("color: #231f20; font-size: 18px; font-weight: bold;");
     d->city = new QLineEdit();
     d->city->setPlaceholderText("Your City");
-    d->city->setMinimumHeight(60);
+    d->city->setMinimumSize(480, 52);
 
     QLabel* streetLabel = new QLabel("Enter Your Street:");
-    streetLabel->setStyleSheet("color: #231f20; font-size: 18px; font-weight: bold;");
     d->street = new QLineEdit();
     d->street->setPlaceholderText("Your Street");
-    d->street->setMinimumHeight(60);
+    d->street->setMinimumSize(480, 52);
 
     QLabel* addressDetailsLabel = new QLabel("Building/Floor/Landmark:");
-    addressDetailsLabel->setStyleSheet("color: #231f20; font-size: 18px; font-weight: bold;");
     d->addressDetails = new QLineEdit();
     d->addressDetails->setPlaceholderText("e.g. Building 5, Floor 3");
-    d->addressDetails->setMinimumHeight(60);
+    d->addressDetails->setMinimumSize(480, 52);
 
     QPushButton* submitBtn = new QPushButton("Submit");
-    submitBtn->setFixedSize(150, 50);
+    submitBtn->setMinimumSize(180, 52);
     submitBtn->setCursor(Qt::PointingHandCursor);
 
 
@@ -322,7 +329,7 @@ void PeopleModule::submitSignUp()
 
 void PeopleModule::submitMealRequest()
 {
-    // ✅ updated validation
+    // Updated validation.
     if (d->mealNumberLine->text().trimmed().isEmpty() ||
         d->city->text().trimmed().isEmpty() ||
         d->street->text().trimmed().isEmpty() ||
@@ -331,7 +338,7 @@ void PeopleModule::submitMealRequest()
         return;
     }
 
-    // ✅ combine city + street for matching
+    // Combine city and street for matching.
     QString fullAddress = d->city->text().trimmed() + ", " +
                           d->street->text().trimmed();
 
@@ -353,7 +360,7 @@ void PeopleModule::submitMealRequest()
         return;
     }
 
-    // ✅ updated meal_requests insert
+    // Updated meal_requests insert.
     QSqlQuery insertQuery;
     insertQuery.prepare("INSERT INTO meal_requests (person_id, meal_count, address) "
                         "VALUES (:person_id, :meal_count, :address)");
@@ -362,7 +369,7 @@ void PeopleModule::submitMealRequest()
     insertQuery.bindValue(":address", fullAddress);
 
     if (insertQuery.exec()) {
-        // ✅ updated all_addresses insert with new columns
+        // Updated all_addresses insert with new columns.
         QSqlQuery addrQuery;
         addrQuery.prepare("INSERT INTO all_addresses "
                           "(source_type, source_id, person_name, provider_name, "
@@ -404,21 +411,22 @@ void PeopleModule::addLogoutButton()
     if (!mainLayout) return;
     
     QPushButton* logoutBtn = new QPushButton("Logout & Switch Account");
+    logoutBtn->setMinimumWidth(260);
     logoutBtn->setCursor(Qt::PointingHandCursor);
     logoutBtn->setStyleSheet(
         "QPushButton {"
         "   background-color: #ffffff;"
-        "   border: 2px solid #f2d9de;"
+        "   border: 2px solid #e7eaee;"
         "   border-radius: 28px;"
         "   padding: 10px;"
         "   font-size: 14px;"
         "   font-weight: 900;"
-        "   color: #df6076;"
+        "   color: #d92731;"
         "   margin-top: 20px;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #fff0f3;"
-        "   border-color: #f28fa0;"
+        "   background-color: #fff0e6;"
+        "   border-color: #ef3038;"
         "}"
     );
     

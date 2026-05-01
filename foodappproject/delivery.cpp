@@ -90,8 +90,8 @@ DeliveryModule::~DeliveryModule()
 void DeliveryModule::setupUI()
 {// this is the delivery system
     setWindowTitle("Delivery");
-    setMinimumSize(800, 600);
-    setStyleSheet("QMainWindow { background-color: #fff6f8; }");
+    setMinimumSize(900, 680);
+    setStyleSheet("QMainWindow { background-color: #fffdf8; }");
 
     QWidget* central = new QWidget();
     setCentralWidget(central);
@@ -104,7 +104,7 @@ void DeliveryModule::setupUI()
     QLabel* header = new QLabel("Delivery System");
     header->setFont(QFont("Arial", 40, QFont::Bold));
     header->setAlignment(Qt::AlignCenter);
-    header->setStyleSheet("color: #231f20; background-color: transparent; padding: 20px;");
+    header->setStyleSheet("color: #20242a; background-color: transparent; padding: 20px;");
 
     QWidget* visualStrip = new QWidget();
     visualStrip->setStyleSheet("background: transparent;");
@@ -117,7 +117,7 @@ void DeliveryModule::setupUI()
         card->setStyleSheet(
             "QWidget {"
             "   background-color: #ffffff;"
-            "   border: 1px solid #f2d9de;"
+            "   border: 1px solid #e7eaee;"
             "   border-radius: 22px;"
             "}"
         );
@@ -126,14 +126,17 @@ void DeliveryModule::setupUI()
         cardLayout->setSpacing(8);
 
         QLabel* iconLabel = new QLabel(icon);
+        iconLabel->setFixedSize(54, 54);
         iconLabel->setAlignment(Qt::AlignCenter);
-        iconLabel->setStyleSheet("font-size: 36px; background: transparent; border: none;");
+        iconLabel->setStyleSheet("font-size: 18px; font-weight: 900; color: white; background: #ef3038; border-radius: 27px;");
 
         QLabel* textLabel = new QLabel(text);
+        textLabel->setWordWrap(true);
+        textLabel->setMinimumHeight(34);
         textLabel->setAlignment(Qt::AlignCenter);
-        textLabel->setStyleSheet("color: #77676c; font-size: 13px; font-weight: 800; background: transparent; border: none;");
+        textLabel->setStyleSheet("color: #68707a; font-size: 13px; font-weight: 800; background: transparent; border: none;");
 
-        cardLayout->addWidget(iconLabel);
+        cardLayout->addWidget(iconLabel, 0, Qt::AlignCenter);
         cardLayout->addWidget(textLabel);
         return card;
     };
@@ -141,20 +144,20 @@ void DeliveryModule::setupUI()
     QString buttonStyle = 
         "QPushButton {"
         "   background-color: #ffffff;"
-        "   border: 2px solid #f2d9de;"
+        "   border: 2px solid #e7eaee;"
         "   border-radius: 28px;"
         "   padding: 17px 34px;"
         "   font-size: 18px;"
         "   font-weight: 900;"
-        "   color: #231f20;"
+        "   color: #20242a;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #fff0f3;"
-        "   border-color: #f28fa0;"
-        "   color: #df6076;"
+        "   background-color: #fff0e6;"
+        "   border-color: #ef3038;"
+        "   color: #d92731;"
         "}"
         "QPushButton:pressed {"
-        "   background-color: #f9c5ce;"
+        "   background-color: #ffe9d9;"
         "}";
 
     QPushButton* signUpBtn = new QPushButton("Sign up");
@@ -162,6 +165,7 @@ void DeliveryModule::setupUI()
     signUpBtn->setCursor(Qt::PointingHandCursor);
 
     QPushButton* notificationsBtn = new QPushButton("Delivery notifications");
+    notificationsBtn->setMinimumWidth(320);
     notificationsBtn->setStyleSheet(buttonStyle);
     notificationsBtn->setCursor(Qt::PointingHandCursor);
 
@@ -175,9 +179,9 @@ void DeliveryModule::setupUI()
 
     layout->addStretch();
     layout->addWidget(header);
-    visualLayout->addWidget(createVisualCard("📦", "New orders"));
-    visualLayout->addWidget(createVisualCard("🛵", "Fast pickup"));
-    visualLayout->addWidget(createVisualCard("📍", "Live route"));
+    visualLayout->addWidget(createVisualCard("01", "New orders"));
+    visualLayout->addWidget(createVisualCard("02", "Fast pickup"));
+    visualLayout->addWidget(createVisualCard("03", "Map tracking"));
     layout->addWidget(visualStrip);
     layout->addWidget(signUpBtn);
     layout->addWidget(notificationsBtn);
@@ -201,32 +205,32 @@ void DeliveryModule::setupSignUpDialog()
 {
     d->signUpDialog = new QDialog(this);
     d->signUpDialog->setWindowTitle("Delivery Sign-Up");
-    d->signUpDialog->setMinimumSize(400, 550);
+    d->signUpDialog->setMinimumSize(560, 680);
     d->signUpDialog->setStyleSheet(
-        "QDialog { background-color: #fff6f8; }"
-        "QLabel { color: #231f20; font-size: 14px; font-weight: 800; margin-top: 8px; }"
+        "QDialog { background-color: #fffdf8; }"
+        "QLabel { color: #20242a; font-size: 15px; font-weight: 800; margin-top: 6px; }"
         "QLineEdit {"
         "    background-color: #ffffff;"
-        "    color: #231f20;"
-        "    padding: 12px;"
-        "    border: 2px solid #f2d9de;"
+        "    color: #20242a;"
+        "    padding: 12px 14px;"
+        "    border: 2px solid #e7eaee;"
         "    border-radius: 18px;"
-        "    font-size: 13px;"
+        "    font-size: 16px;"
         "}"
-        "QLineEdit:focus { border: 2px solid #f28fa0; background-color: #ffffff; }"
-        "QLineEdit:hover { border: 2px solid #f28fa0; }"
+        "QLineEdit:focus { border: 2px solid #ef3038; background-color: #ffffff; }"
+        "QLineEdit:hover { border: 2px solid #ef3038; }"
         "QPushButton {"
-        "    background-color: #f28fa0;"
+        "    background-color: #ef3038;"
         "    border: none;"
         "    border-radius: 28px;"
         "    padding: 12px;"
         "    font-size: 18px;"
         "    font-weight: 900;"
-        "    color: #231f20;"
+        "    color: #20242a;"
         "    margin-top: 20px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #df6076;"
+        "    background-color: #d92731;"
         "    color: #ffffff;"
         "}"
         "QPushButton:pressed { background-color: #c74f63; }"
@@ -234,7 +238,7 @@ void DeliveryModule::setupSignUpDialog()
 
     QVBoxLayout* layout = new QVBoxLayout(d->signUpDialog);
     layout->setSpacing(12);
-    layout->setContentsMargins(30, 30, 30, 30);
+    layout->setContentsMargins(34, 28, 34, 28);
 
     // Create form fields
     QLabel* nameLabel = new QLabel("Name:");
@@ -262,6 +266,17 @@ void DeliveryModule::setupSignUpDialog()
     d->vehicleField = new QLineEdit();
     d->vehicleField->setPlaceholderText("Enter vehicle type");
 
+    for (QLineEdit* field : {
+             d->nameField,
+             d->nationalIdField,
+             d->personalIdField,
+             d->ageField,
+             d->cityField,
+             d->vehicleField
+         }) {
+        field->setMinimumSize(480, 52);
+    }
+
     layout->addWidget(nameLabel);
     layout->addWidget(d->nameField);
     layout->addWidget(nationalIdLabel);
@@ -276,8 +291,9 @@ void DeliveryModule::setupSignUpDialog()
     layout->addWidget(d->vehicleField);
 
     QPushButton* submitBtn = new QPushButton("Submit Registration");
+    submitBtn->setMinimumSize(240, 54);
     submitBtn->setCursor(Qt::PointingHandCursor);// this just mean when we are on submit btn cursor chane from normal to hand cursor
-    layout->addWidget(submitBtn);
+    layout->addWidget(submitBtn, 0, Qt::AlignCenter);
 
     connect(submitBtn, &QPushButton::clicked, [this]() {
         // Validation to make sure no field is empty
@@ -320,7 +336,7 @@ void DeliveryModule::setupSignUpDialog()
         query.bindValue(":vehicle", d->vehicleField->text().trimmed());
         // binding values to database
         if (query.exec()) {
-            // ✅ SET CURRENT DELIVERY PERSON DATA
+            // Set current delivery person data.
             d->currentDeliveryPersonId = d->personalIdField->text().trimmed();
             d->currentDeliveryPersonName = d->nameField->text().trimmed();
 
@@ -352,12 +368,12 @@ void DeliveryModule::setupLoginDialog()
     d->loginDialog->setWindowTitle("Login");
     d->loginDialog->setMinimumSize(350, 200);
     d->loginDialog->setStyleSheet(
-        "QDialog { background-color: #fff6f8; }"
-        "QLabel { color: #231f20; font-size: 15px; font-weight: 800; }"
-        "QLineEdit { background: white; border: 2px solid #f2d9de; border-radius: 18px; padding: 12px; color: #231f20; }"
-        "QLineEdit:focus { border-color: #f28fa0; }"
-        "QPushButton { background-color: #f28fa0; color: #231f20; border: none; border-radius: 22px; padding: 12px 24px; font-weight: 900; }"
-        "QPushButton:hover { background-color: #df6076; color: white; }"
+        "QDialog { background-color: #fffdf8; }"
+        "QLabel { color: #20242a; font-size: 15px; font-weight: 800; }"
+        "QLineEdit { background: white; border: 2px solid #e7eaee; border-radius: 18px; padding: 12px; color: #20242a; }"
+        "QLineEdit:focus { border-color: #ef3038; }"
+        "QPushButton { background-color: #ef3038; color: #20242a; border: none; border-radius: 22px; padding: 12px 24px; font-weight: 900; }"
+        "QPushButton:hover { background-color: #d92731; color: white; }"
     );
 
     QVBoxLayout* layout = new QVBoxLayout(d->loginDialog);
@@ -418,42 +434,42 @@ void DeliveryModule::setupNotificationsDialog()
     d->notificationsDialog->setWindowTitle("Matching Delivery Requests");
     d->notificationsDialog->setMinimumSize(700, 600);
     d->notificationsDialog->setStyleSheet(
-        "QDialog { background-color: #fff6f8; }"
-        "QLabel { color: #231f20; font-size: 14px; font-weight: 700; }"
-        "QListWidget { background-color: #ffffff; border: 2px solid #f2d9de; border-radius: 18px; padding: 8px; }"
-        "QListWidget::item { padding: 12px; border-bottom: 1px solid #f2d9de; border-radius: 12px; }"
-        "QListWidget::item:hover { background-color: #fff0f3; }"
-        "QListWidget::item:selected { background-color: #f28fa0; color: #231f20; }"
-        "QTextEdit { background-color: #ffffff; border: 2px solid #f2d9de; border-radius: 18px; padding: 10px; color: #231f20; }"
+        "QDialog { background-color: #fffdf8; }"
+        "QLabel { color: #20242a; font-size: 14px; font-weight: 700; }"
+        "QListWidget { background-color: #ffffff; border: 2px solid #e7eaee; border-radius: 18px; padding: 8px; }"
+        "QListWidget::item { padding: 12px; border-bottom: 1px solid #e7eaee; border-radius: 12px; }"
+        "QListWidget::item:hover { background-color: #fff0e6; }"
+        "QListWidget::item:selected { background-color: #ef3038; color: #20242a; }"
+        "QTextEdit { background-color: #ffffff; border: 2px solid #e7eaee; border-radius: 18px; padding: 10px; color: #20242a; }"
         "QPushButton {"
-        "    background-color: #f28fa0;"
-        "    color: #231f20;"
+        "    background-color: #ef3038;"
+        "    color: #20242a;"
         "    border: none;"
         "    border-radius: 22px;"
         "    padding: 11px 22px;"
         "    font-weight: 900;"
         "}"
-        "QPushButton:hover { background-color: #df6076; color: #ffffff; }"
+        "QPushButton:hover { background-color: #d92731; color: #ffffff; }"
         );
 
     QVBoxLayout* layout = new QVBoxLayout(d->notificationsDialog);
     layout->setSpacing(15);
     layout->setContentsMargins(20, 20, 20, 20);
 
-    QLabel* titleLabel = new QLabel("📦 Matching Delivery Requests");
+    QLabel* titleLabel = new QLabel("Matching Delivery Requests");
     titleLabel->setFont(QFont("Arial", 16, QFont::Bold));
-    titleLabel->setStyleSheet("color: #df6076;");
+    titleLabel->setStyleSheet("color: #d92731;");
     layout->addWidget(titleLabel);
 
     QLabel* instructionLabel = new QLabel("Select a request below to view details:");
-    instructionLabel->setStyleSheet("color: #77676c;");
+    instructionLabel->setStyleSheet("color: #68707a;");
     layout->addWidget(instructionLabel);
 
     d->matchingDeliveriesList = new QListWidget();
     layout->addWidget(d->matchingDeliveriesList);
 
     QLabel* detailsLabel = new QLabel("Request Details:");
-    detailsLabel->setStyleSheet("color: #231f20; font-weight: bold;");
+    detailsLabel->setStyleSheet("color: #20242a; font-weight: bold;");
     layout->addWidget(detailsLabel);
 
     d->deliveryDetailsText = new QTextEdit();
@@ -462,7 +478,7 @@ void DeliveryModule::setupNotificationsDialog()
     layout->addWidget(d->deliveryDetailsText);
 
     QHBoxLayout* buttonLayout = new QHBoxLayout();
-    QPushButton* acceptBtn = new QPushButton("✓ Accept Delivery");
+    QPushButton* acceptBtn = new QPushButton("Accept Delivery");
     acceptBtn->setCursor(Qt::PointingHandCursor);
 
     QPushButton* closeBtn = new QPushButton("Close");
@@ -517,8 +533,8 @@ void DeliveryModule::setupNotificationsDialog()
             // Update the all_addresses table to mark this delivery as assigned
             QSqlQuery updateQuery;
             updateQuery.prepare("UPDATE all_addresses SET "
-                                "match_status = 'matched', "    // ← stays matched
-                                "delivery_status = 'accepted', " // ← new!
+                                "match_status = 'matched', "
+                                "delivery_status = 'accepted', "
                                 "assigned_to = :user "
                                 "WHERE id = :id");
 
@@ -534,7 +550,7 @@ void DeliveryModule::setupNotificationsDialog()
                                              .arg(deliveryId));
                     return;
                 }
-                QMessageBox::information(d->notificationsDialog, "✓ Delivery Accepted!",
+                QMessageBox::information(d->notificationsDialog, "Delivery Accepted!",
                                          QString("Great! You've accepted this delivery:\n\n"
                                                  "Pickup: %1\n"
                                                  "Delivery To: %2\n\n"
@@ -609,7 +625,7 @@ void DeliveryModule::handleNotifications()
         int deliveredMeals = query.value(7).toInt();      
         int remainingNeeded = mealCount - deliveredMeals;  
         
-        QString displayText = QString("%1 needs %2 more meals (Total: %3, Received: %4) from '%5' → '%6' (Score: %7)")
+        QString displayText = QString("%1 needs %2 more meals (Total: %3, Received: %4) from '%5' to '%6' (Score: %7)")
                                   .arg(personName)
                                   .arg(remainingNeeded)
                                   .arg(mealCount)
@@ -652,21 +668,22 @@ void DeliveryModule::addLogoutButton()
     if (!mainLayout) return;
     
     QPushButton* logoutBtn = new QPushButton("Logout & Switch Account");
+    logoutBtn->setMinimumWidth(260);
     logoutBtn->setCursor(Qt::PointingHandCursor);
     logoutBtn->setStyleSheet(
         "QPushButton {"
         "   background-color: #ffffff;"
-        "   border: 2px solid #f2d9de;"
+        "   border: 2px solid #e7eaee;"
         "   border-radius: 28px;"
         "   padding: 10px;"
         "   font-size: 14px;"
         "   font-weight: 900;"
-        "   color: #df6076;"
+        "   color: #d92731;"
         "   margin-top: 20px;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #fff0f3;"
-        "   border-color: #f28fa0;"
+        "   background-color: #fff0e6;"
+        "   border-color: #ef3038;"
         "}"
     );
     
@@ -888,7 +905,7 @@ QWebEngineView* mapView = new QWebEngineView();
 mapView->setWindowTitle("Delivery Map");
 mapView->resize(1200, 800);
 
-// ✅ enable GPS permission
+// Enable GPS permission.
 mapView->settings()->setAttribute(
     QWebEngineSettings::JavascriptEnabled, true
 );
