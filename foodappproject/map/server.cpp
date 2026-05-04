@@ -8,16 +8,18 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <sstream>
-#include <thread>
 #include <unordered_map>
 #include <algorithm>
 #include <iomanip>
 #include <cctype>
+#include <utility>
 #include <nlohmann/json.hpp>
 
 using tcp = boost::asio::ip::tcp;
+namespace beast = boost::beast;
 namespace http = boost::beast::http;
 namespace ssl = boost::asio::ssl;
 using json = nlohmann::json;
@@ -197,11 +199,8 @@ json geocodeAddress(const std::string& address) {
     return {{"error", "not found"}};
 }
 
-void handle(tcp::socket socket) {
+http::response<http::string_body> makeResponse(const http::request<http::string_body>& req) {
     try {
-        boost::beast::flat_buffer buffer;
-        http::request<http::string_body> req;
-        http::read(socket, buffer, req);
         std::string target(req.target());
 
         if (req.method() == http::verb::options) {
@@ -211,8 +210,7 @@ void handle(tcp::socket socket) {
             res.set(http::field::access_control_allow_methods, "GET, POST, OPTIONS");
             res.set(http::field::access_control_allow_headers, "Content-Type");
             res.prepare_payload();
-            http::write(socket, res);
-            return;
+            return res;
         }
 
         std::string responseBody;
@@ -409,24 +407,133 @@ void handle(tcp::socket socket) {
         res.set(http::field::access_control_allow_origin, "*");
         res.body() = responseBody;
         res.prepare_payload();
-        http::write(socket, res);
-        socket.shutdown(tcp::socket::shutdown_send);
+        return res;
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
-        try {
-            http::response<http::string_body> res{http::status::internal_server_error, 11};
-            res.set(http::field::connection, "close");
-            res.set(http::field::content_type, "application/json");
-            res.set(http::field::access_control_allow_origin, "*");
-            res.body() = std::string("{\"error\":\"internal\",\"detail\":")
-                + json(e.what()).dump() + "}";
-            res.prepare_payload();
-            http::write(socket, res);
-            socket.shutdown(tcp::socket::shutdown_send);
-        } catch (...) {}
+        http::response<http::string_body> res{http::status::internal_server_error, 11};
+        res.set(http::field::connection, "close");
+        res.set(http::field::content_type, "application/json");
+        res.set(http::field::access_control_allow_origin, "*");
+        res.body() = std::string("{\"error\":\"internal\",\"detail\":")
+            + json(e.what()).dump() + "}";
+        res.prepare_payload();
+        return res;
     }
 }
+
+class HttpSession : public std::enable_shared_from_this<HttpSession> {
+public:
+    explicit HttpSession(tcp::socket socket)
+        : socket_(std::move(socket)) {}
+
+    void run() {
+        doRead();
+    }
+
+private:
+    tcp::socket socket_;
+    beast::flat_buffer buffer_;
+    http::request<http::string_body> req_;
+
+    void doRead() {
+        req_ = {};
+        http::async_read(
+            socket_,
+            buffer_,
+            req_,
+            [self = shared_from_this()](beast::error_code ec, std::size_t) {
+                self->onRead(ec);
+            });
+    }
+
+    void onRead(beast::error_code ec) {
+        if (ec == http::error::end_of_stream) {
+            return doClose();
+        }
+
+        if (ec) {
+            std::cerr << "Read error: " << ec.message() << "\n";
+            return;
+        }
+
+        auto res = std::make_shared<http::response<http::string_body>>(makeResponse(req_));
+        http::async_write(
+            socket_,
+            *res,
+            [self = shared_from_this(), res](beast::error_code writeEc, std::size_t) {
+                self->onWrite(writeEc);
+            });
+    }
+
+    void onWrite(beast::error_code ec) {
+        if (ec) {
+            std::cerr << "Write error: " << ec.message() << "\n";
+            return;
+        }
+
+        doClose();
+    }
+
+    void doClose() {
+        beast::error_code ec;
+        socket_.shutdown(tcp::socket::shutdown_send, ec);
+    }
+};
+
+class Listener : public std::enable_shared_from_this<Listener> {
+public:
+    Listener(boost::asio::io_context& ioc, tcp::endpoint endpoint)
+        : ioc_(ioc), acceptor_(ioc) {
+        beast::error_code ec;
+
+        acceptor_.open(endpoint.protocol(), ec);
+        if (ec) {
+            throw beast::system_error(ec);
+        }
+
+        acceptor_.set_option(boost::asio::socket_base::reuse_address(true), ec);
+        if (ec) {
+            throw beast::system_error(ec);
+        }
+
+        acceptor_.bind(endpoint, ec);
+        if (ec) {
+            throw beast::system_error(ec);
+        }
+
+        acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
+        if (ec) {
+            throw beast::system_error(ec);
+        }
+    }
+
+    void run() {
+        doAccept();
+    }
+
+private:
+    boost::asio::io_context& ioc_;
+    tcp::acceptor acceptor_;
+
+    void doAccept() {
+        acceptor_.async_accept(
+            boost::asio::make_strand(ioc_),
+            [self = shared_from_this()](beast::error_code ec, tcp::socket socket) {
+                self->onAccept(ec, std::move(socket));
+            });
+    }
+
+    void onAccept(beast::error_code ec, tcp::socket socket) {
+        if (ec) {
+            std::cerr << "Accept error: " << ec.message() << "\n";
+        } else {
+            std::make_shared<HttpSession>(std::move(socket))->run();
+        }
+
+        doAccept();
+    }
+};
 
 int main(int argc, char* argv[]) {
     if (argc >= 2) {
@@ -435,11 +542,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Serving HTML from: " << g_htmlDir << "\n";
 
     boost::asio::io_context ioc;
-    tcp::acceptor acceptor{ioc, {tcp::v4(), 3000}};
+    std::make_shared<Listener>(ioc, tcp::endpoint{tcp::v4(), 3000})->run();
     std::cout << "Server running on port 3000\n";
-    while (true) {
-        tcp::socket socket{ioc};
-        acceptor.accept(socket);
-        std::thread{handle, std::move(socket)}.detach();
-    }
+    ioc.run();
 }

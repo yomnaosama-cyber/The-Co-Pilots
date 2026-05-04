@@ -1,0 +1,9 @@
+-rootPath
+/mnt/c/Users/Microsoft/Documents/Codex/2026-05-04/github-plugin-github-openai-curated-clone/The-Co-Pilots/foodappproject
+-cmake-output
+-output-file
+/mnt/c/Users/Microsoft/Documents/Codex/2026-05-04/github-plugin-github-openai-curated-clone/The-Co-Pilots/foodappproject/build-wsl/.qt_plugins/Qt6_QmlPlugins_Imports_foodappproject.cmake
+-importPath
+/mnt/c/Users/Microsoft/Documents/Codex/2026-05-04/github-plugin-github-openai-curated-clone/The-Co-Pilots/foodappproject/build-wsl
+-importPath
+/usr/lib/x86_64-linux-gnu/qt6/qml

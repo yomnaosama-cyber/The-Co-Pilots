@@ -26,7 +26,8 @@ int main(int argc, char* argv[]) {
     qDebug() << "Server URL:" << serverUrl;
     
     QString runServer = qgetenv("FOODAPP_RUN_SERVER");
-    qDebug() << "Run Map Server:" << (runServer == "1" ? "YES" : "NO (client mode)");
+    bool shouldRunServer = !(runServer == "0" || runServer.toLower() == "false");
+    qDebug() << "Run Map Server:" << (shouldRunServer ? "YES" : "NO (client mode)");
     
     QString apiKey = qgetenv("GOOGLE_MAPS_API_KEY");
     qDebug() << "API Key:" << (apiKey.isEmpty() ? "Using fallback key" : "Using environment key");

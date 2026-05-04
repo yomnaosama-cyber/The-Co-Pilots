@@ -55,12 +55,12 @@ public:
 
 static void startTrackingServer(DeliveryModulePrivate* d)
 {
-    // Check if this device should run the map server
+    // Run by default on the host; clients can explicitly disable it.
     QString runServerEnv = qgetenv("FOODAPP_RUN_SERVER");
-    bool shouldRunServer = (runServerEnv == "1" || runServerEnv == "true");
+    bool shouldRunServer = !(runServerEnv == "0" || runServerEnv.toLower() == "false");
     
     if (!shouldRunServer) {
-        qDebug() << "Map server disabled (FOODAPP_RUN_SERVER not set or 0)";
+        qDebug() << "Map server disabled (FOODAPP_RUN_SERVER=0 or false)";
         return;
     }
     

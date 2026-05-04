@@ -1,0 +1,14 @@
+DatabaseTest.CreatesAllTables 1 0.89064
+DatabaseTest.InsertsAndRetrievesPerson 1 0.299981
+DatabaseTest.PreventsDuplicatePersonalIds 1 0.283458
+DatabaseTest.ValidatesAgeRange 1 0.270691
+DatabaseTest.TracksRemainingMeals 1 0.454849
+DatabaseTest.CalculatesRemainingNeeded 1 0.481351
+AddressMatcherTest.MatchesSameCityExactStreet 1 1.19369
+AddressMatcherTest.NoMatchDifferentCities 1 1.00404
+AddressMatcherTest.PartialStreetMatch 1 0.965475
+AddressMatcherTest.MatchesPartialMeals 1 0.9279
+MockTest.RequestMealWhenEnoughAvailable 1 0.0463456
+MockTest.RequestMealWhenNotEnoughAvailable 1 0.0437096
+MockTest.RequestMealWhenDonationDoesNotExist 1 0.0543417
+---
