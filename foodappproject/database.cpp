@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QStringList>
 #include <QRegularExpression>
+#include <QDate>
 
 bool DatabaseManager::initDatabase() {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
@@ -22,7 +23,7 @@ bool DatabaseManager::initDatabase() {
     createRestaurantsTable();
     createOrganizationsTable();
     createFoodDonationsTable();
-createProviderSafetyChecksTable();
+    createProviderSafetyChecksTable();
     createAddressesTable();
 
     return true;
@@ -95,12 +96,14 @@ void DatabaseManager::createFoodDonationsTable() {
                "provider_name TEXT NOT NULL, "
                "provider_role TEXT NOT NULL, "
                "food_amount TEXT NOT NULL, "
-               "remaining_meals INTEGER DEFAULT 0, " 
+               "remaining_meals INTEGER DEFAULT 0, "
                "food_type TEXT NOT NULL, "
                "donation_location TEXT NOT NULL, "
                "delivery_method TEXT NOT NULL, "
+               "expiry_date TEXT DEFAULT '', "
                "donation_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
     query.exec("ALTER TABLE food_donations ADD COLUMN remaining_meals INTEGER DEFAULT 0");
+    query.exec("ALTER TABLE food_donations ADD COLUMN expiry_date TEXT DEFAULT ''");
 }
 
 void DatabaseManager::createAddressesTable() {
@@ -133,7 +136,23 @@ query.exec("ALTER TABLE all_addresses ADD COLUMN delivery_status TEXT");
 
 void DatabaseManager::matchAddresses() {
     QSqlQuery query;
-   
+
+    QSqlQuery deleteExpiredAddresses;
+    deleteExpiredAddresses.prepare("DELETE FROM all_addresses "
+                                   "WHERE source_type = 'donation' "
+                                   "AND source_id IN ("
+                                   "    SELECT id FROM food_donations "
+                                   "    WHERE expiry_date != '' AND expiry_date < :today"
+                                   ")");
+    deleteExpiredAddresses.bindValue(":today", QDate::currentDate().toString("yyyy-MM-dd"));
+    deleteExpiredAddresses.exec();
+
+    QSqlQuery deleteExpiredDonations;
+    deleteExpiredDonations.prepare("DELETE FROM food_donations "
+                                   "WHERE expiry_date != '' AND expiry_date < :today");
+    deleteExpiredDonations.bindValue(":today", QDate::currentDate().toString("yyyy-MM-dd"));
+    deleteExpiredDonations.exec();
+
     query.exec("SELECT id, address, person_name, city, street, details FROM all_addresses "
                "WHERE source_type = 'meal_request' AND match_status = 'unmatched' "
                "ORDER BY created_at ASC");
@@ -297,10 +316,12 @@ void DatabaseManager::createProviderSafetyChecksTable() {
                "provider_role TEXT NOT NULL, "
                "food_age TEXT NOT NULL, "
                "ingredients TEXT NOT NULL, "
+               "expiry_date TEXT NOT NULL DEFAULT '', "
                "storage_location TEXT NOT NULL, "
                "storage_temperature TEXT, "
                "allergen_info TEXT, "
                "safety_notes TEXT, "
                "photo_path TEXT, "
                "check_date DATETIME DEFAULT CURRENT_TIMESTAMP)");
+    query.exec("ALTER TABLE provider_safety_checks ADD COLUMN expiry_date TEXT DEFAULT ''");
 }

@@ -16,6 +16,12 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QScrollArea>
+#include <QDate>
+#include <QDateEdit>
+#include <QTableWidget>
+#include <QHeaderView>
+#include <QProgressBar>
+#include <QTimer>
 class OrgModulePrivate {
 public:
     QStackedWidget *stack = nullptr;
@@ -45,6 +51,7 @@ public:
     QLineEdit *donationCity = nullptr;
     QLineEdit *donationStreet = nullptr;
     QLineEdit *donationAddressDetails = nullptr;
+    QDateEdit *expiryDate = nullptr;
     QComboBox *deliveryMethod = nullptr;
 // Safety check fields
 QLineEdit *foodAge = nullptr;
@@ -54,6 +61,14 @@ QLineEdit *storageTemperature = nullptr;
 QLineEdit *allergenInfo = nullptr;
 QTextEdit *safetyNotes = nullptr;
 QLineEdit *photoPath = nullptr;
+
+    // Updates page
+    QLineEdit *updatesProviderName = nullptr;
+    QTableWidget *updatesTable = nullptr;
+    QLabel *statusSummary = nullptr;
+    QLabel *statusDetail = nullptr;
+    QProgressBar *statusProgress = nullptr;
+    QTimer *statusTimer = nullptr;
 };
 
 OrgModule::OrgModule(QWidget *parent)
@@ -74,14 +89,14 @@ void OrgModule::setupUI()
     setStyleSheet(
         "QDialog { background-color: #fffdf8; }"
         "QLabel { color: #20242a; font-size: 14px; font-weight: 800; }"
-        "QLineEdit, QTextEdit, QComboBox {"
+        "QLineEdit, QTextEdit, QComboBox, QDateEdit {"
         "    background-color: white;"
         "    color: #20242a;"
         "    border: 2px solid #e7eaee;"
         "    border-radius: 16px;"
         "    padding: 10px;"
         "}"
-        "QLineEdit:focus, QTextEdit:focus, QComboBox:focus {"
+        "QLineEdit:focus, QTextEdit:focus, QComboBox:focus, QDateEdit:focus {"
         "    border: 2px solid #ef3038;"
         "}"
         "QStackedWidget {"
@@ -149,18 +164,49 @@ void OrgModule::setupUI()
     providerPictureLayout->addWidget(createProviderPicture("03", "Donations"));
     mainLayout->addWidget(providerPictures);
 
+    QWidget* statusBar = new QWidget();
+    statusBar->setStyleSheet(
+        "QWidget { background-color: #ffffff; border: 1px solid #e7eaee; border-radius: 18px; }"
+        "QLabel { background: transparent; border: none; }"
+        "QProgressBar { background-color: #f2f4f7; border: none; border-radius: 7px; height: 14px; text-align: center; color: #20242a; font-weight: 800; }"
+        "QProgressBar::chunk { background-color: #ff9d18; border-radius: 7px; }"
+    );
+    QVBoxLayout* statusLayout = new QVBoxLayout(statusBar);
+    statusLayout->setContentsMargins(20, 14, 20, 14);
+    statusLayout->setSpacing(7);
+    d->statusSummary = new QLabel("Latest donation: No order yet");
+    d->statusSummary->setStyleSheet("color: #20242a; font-size: 16px; font-weight: 900;");
+    d->statusDetail = new QLabel("Submit a donation to start tracking.");
+    d->statusDetail->setWordWrap(true);
+    d->statusDetail->setStyleSheet("color: #68707a; font-size: 13px; font-weight: 800;");
+    d->statusProgress = new QProgressBar();
+    d->statusProgress->setRange(0, 100);
+    d->statusProgress->setValue(0);
+    statusLayout->addWidget(d->statusSummary);
+    statusLayout->addWidget(d->statusProgress);
+    statusLayout->addWidget(d->statusDetail);
+    mainLayout->addWidget(statusBar);
+
     // Tab buttons
     QHBoxLayout* switchLayout = new QHBoxLayout();
     QPushButton* restaurantBtn = new QPushButton("Restaurant");
     QPushButton* organizationBtn = new QPushButton("Organization");
     QPushButton* donateBtn = new QPushButton("Donation Details");
-    restaurantBtn->setMinimumWidth(160);
-    organizationBtn->setMinimumWidth(180);
-    donateBtn->setMinimumWidth(190);
+    QPushButton* updatesBtn = new QPushButton("Updates");
+    restaurantBtn->setMinimumWidth(150);
+    organizationBtn->setMinimumWidth(160);
+    donateBtn->setMinimumWidth(170);
+    updatesBtn->setMinimumWidth(130);
+    updatesBtn->setStyleSheet(
+        "QPushButton { background-color: #20242a; color: white; border: none;"
+        "              border-radius: 22px; padding: 11px 18px; font-weight: 900; }"
+        "QPushButton:hover { background-color: #3a4250; color: #ffffff; }"
+    );
 
     switchLayout->addWidget(restaurantBtn);
     switchLayout->addWidget(organizationBtn);
     switchLayout->addWidget(donateBtn);
+    switchLayout->addWidget(updatesBtn);
     mainLayout->addLayout(switchLayout);
 
     d->stack = new QStackedWidget(this);
@@ -170,12 +216,18 @@ void OrgModule::setupUI()
     setupRestaurantPage();
     setupOrganizationPage();
     setupDonationPage();
+    setupUpdatesPage();
 
     connect(restaurantBtn, &QPushButton::clicked, this, &OrgModule::onRestaurantTab);
     connect(organizationBtn, &QPushButton::clicked, this, &OrgModule::onOrganizationTab);
     connect(donateBtn, &QPushButton::clicked, this, &OrgModule::onDonationTab);
+    connect(updatesBtn, &QPushButton::clicked, this, &OrgModule::onUpdatesTab);
 
     addLogoutButton();
+    updateOrderStatusBar();
+    d->statusTimer = new QTimer(this);
+    connect(d->statusTimer, &QTimer::timeout, this, &OrgModule::updateOrderStatusBar);
+    d->statusTimer->start(5000);
 }
 
 void OrgModule::setupRestaurantPage()
@@ -222,9 +274,10 @@ void OrgModule::setupRestaurantPage()
     form->addRow("Food Type:", d->resFoodType);
     form->addRow("Contact Info:", d->resContact);
 
-    QPushButton* submitBtn = new QPushButton("Register Restaurant");
-    submitBtn->setMinimumSize(240, 44);
+    QPushButton* submitBtn = new QPushButton("Submit Restaurant Registration");
+    submitBtn->setMinimumSize(300, 54);
     submitBtn->setCursor(Qt::PointingHandCursor);
+    submitBtn->setStyleSheet("font-size: 16px; background-color: #20242a; color: white; border-radius: 27px;");
     connect(submitBtn, &QPushButton::clicked, this, &OrgModule::submitRestaurant);
 
     layout->addLayout(form);
@@ -278,9 +331,10 @@ void OrgModule::setupOrganizationPage()
     form->addRow("Purpose:", d->orgPurpose);
     form->addRow("Contact Info:", d->orgContact);
 
-    QPushButton* submitBtn = new QPushButton("Register Organization");
-    submitBtn->setMinimumSize(250, 44);
+    QPushButton* submitBtn = new QPushButton("Submit Organization Registration");
+    submitBtn->setMinimumSize(320, 54);
     submitBtn->setCursor(Qt::PointingHandCursor);
+    submitBtn->setStyleSheet("font-size: 16px; background-color: #20242a; color: white; border-radius: 27px;");
     connect(submitBtn, &QPushButton::clicked, this, &OrgModule::submitOrganization);
 
     layout->addLayout(form);
@@ -315,6 +369,10 @@ QVBoxLayout* layout = new QVBoxLayout(page);
     d->donationStreet->setPlaceholderText("e.g. Tahrir Street");
     d->donationAddressDetails = new QLineEdit();
     d->donationAddressDetails->setPlaceholderText("e.g. Building 5, Floor 3");
+    d->expiryDate = new QDateEdit(QDate::currentDate().addDays(1));
+    d->expiryDate->setCalendarPopup(true);
+    d->expiryDate->setDisplayFormat("yyyy-MM-dd");
+    d->expiryDate->setMinimumDate(QDate::currentDate());
     d->deliveryMethod = new QComboBox();
 d->foodAge = new QLineEdit();
 d->ingredients = new QTextEdit();
@@ -339,6 +397,7 @@ d->photoPath = new QLineEdit();
         field->setMinimumHeight(42);
     }
     d->providerRole->setMinimumHeight(42);
+    d->expiryDate->setMinimumHeight(42);
     d->deliveryMethod->setMinimumHeight(42);
 
     form->addRow("Provider Name:", d->providerName);
@@ -348,6 +407,7 @@ d->photoPath = new QLineEdit();
     form->addRow("City:", d->donationCity);
     form->addRow("Street:", d->donationStreet);
     form->addRow("Building/Details:", d->donationAddressDetails);
+    form->addRow("Expiry Date:", d->expiryDate);
     form->addRow("Delivery Method:", d->deliveryMethod);
 form->addRow("How long ago was food made?", d->foodAge);
 form->addRow("Ingredients:", d->ingredients);
@@ -372,15 +432,77 @@ connect(photoButton, &QPushButton::clicked, this, [this]() {
         d->photoPath->setText(fileName);
     }
 });
-    QPushButton* submitBtn = new QPushButton("Submit Donation Details");
-    submitBtn->setMinimumSize(260, 44);
+    QPushButton* submitBtn = new QPushButton("Submit Donation & Safety Check");
+    submitBtn->setMinimumSize(330, 54);
     submitBtn->setCursor(Qt::PointingHandCursor);
+    submitBtn->setStyleSheet("font-size: 16px; background-color: #20242a; color: white; border-radius: 27px;");
     connect(submitBtn, &QPushButton::clicked, this, &OrgModule::submitDonation);
 
     layout->addLayout(form);
     layout->addWidget(submitBtn, 0, Qt::AlignCenter);
     scrollArea->setWidget(page);
 d->stack->addWidget(scrollArea);
+}
+
+void OrgModule::updateOrderStatusBar()
+{
+    if (!d->statusSummary || !d->statusDetail || !d->statusProgress) return;
+
+    QSqlQuery query;
+    query.exec(
+        "SELECT fd.provider_name, fd.food_amount, fd.remaining_meals, fd.food_type, "
+        "       COALESCE(aa.match_status, 'unmatched'), "
+        "       COALESCE(aa.delivery_status, 'pending') "
+        "FROM food_donations fd "
+        "LEFT JOIN all_addresses aa ON aa.source_type = 'donation' AND aa.source_id = fd.id "
+        "ORDER BY fd.donation_date DESC LIMIT 1"
+    );
+
+    if (!query.next()) {
+        d->statusSummary->setText("Latest donation: No order yet");
+        d->statusDetail->setText("Submit a donation to start tracking.");
+        d->statusProgress->setValue(0);
+        return;
+    }
+
+    const QString providerName = query.value(0).toString();
+    const int totalMeals = query.value(1).toInt();
+    const int remainingMeals = query.value(2).toInt();
+    const QString foodType = query.value(3).toString();
+    const QString matchStatus = query.value(4).toString();
+    const QString deliveryStatus = query.value(5).toString();
+
+    int progress = 25;
+    QString statusText = "Submitted";
+    QString detail = "Waiting for a matching meal request.";
+
+    if (matchStatus == "matched" || remainingMeals < totalMeals) {
+        progress = 65;
+        statusText = "Matched";
+        detail = "Some meals have been matched with people in need.";
+    }
+    if (deliveryStatus == "in_transit" || deliveryStatus == "assigned" || deliveryStatus == "in_progress") {
+        progress = 85;
+        statusText = "In transit";
+        detail = "Pickup or delivery is active for this donation.";
+    }
+    if (deliveryStatus == "delivered" || (totalMeals > 0 && remainingMeals <= 0)) {
+        progress = 100;
+        statusText = "Completed";
+        detail = "All meals from this donation have been allocated or delivered.";
+    }
+
+    d->statusSummary->setText(
+        QString("Latest donation by %1: %2")
+            .arg(providerName.isEmpty() ? QString("provider") : providerName)
+            .arg(statusText));
+    d->statusDetail->setText(
+        QString("%1 of %2 %3 remaining. %4")
+            .arg(remainingMeals < 0 ? 0 : remainingMeals)
+            .arg(totalMeals)
+            .arg(foodType.isEmpty() ? "meals" : foodType)
+            .arg(detail));
+    d->statusProgress->setValue(progress);
 }
 
 void OrgModule::onRestaurantTab()
@@ -396,6 +518,128 @@ void OrgModule::onOrganizationTab()
 void OrgModule::onDonationTab()
 {
     d->stack->setCurrentIndex(2);
+}
+
+void OrgModule::onUpdatesTab()
+{
+    d->stack->setCurrentIndex(3);
+}
+
+void OrgModule::setupUpdatesPage()
+{
+    QWidget* page = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(18, 14, 18, 14);
+    layout->setSpacing(12);
+
+    QLabel* title = new QLabel("Donation & Delivery Updates");
+    title->setFont(QFont("Arial", 18, QFont::Bold));
+    title->setAlignment(Qt::AlignCenter);
+    title->setStyleSheet("font-size: 18px; font-weight: 900; color: #20242a;");
+    layout->addWidget(title);
+
+    QLabel* subtitle = new QLabel("Track your donations — see how many meals were matched and delivery progress.");
+    subtitle->setWordWrap(true);
+    subtitle->setAlignment(Qt::AlignCenter);
+    subtitle->setStyleSheet("color: #68707a; font-size: 13px; font-weight: 600;");
+    layout->addWidget(subtitle);
+
+    QHBoxLayout* searchLayout = new QHBoxLayout();
+    QLabel* nameLabel = new QLabel("Provider Name:");
+    d->updatesProviderName = new QLineEdit();
+    d->updatesProviderName->setPlaceholderText("Enter your registered provider name");
+    d->updatesProviderName->setMinimumHeight(42);
+    QPushButton* refreshBtn = new QPushButton("Check Updates");
+    refreshBtn->setMinimumHeight(42);
+    searchLayout->addWidget(nameLabel);
+    searchLayout->addWidget(d->updatesProviderName, 1);
+    searchLayout->addWidget(refreshBtn);
+    layout->addLayout(searchLayout);
+
+    d->updatesTable = new QTableWidget(0, 6);
+    d->updatesTable->setHorizontalHeaderLabels({"Donation Date", "Food Type", "Total Meals", "Remaining", "Match Status", "Delivery Status"});
+    d->updatesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    d->updatesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    d->updatesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    d->updatesTable->setAlternatingRowColors(true);
+    d->updatesTable->verticalHeader()->setVisible(false);
+    d->updatesTable->setStyleSheet(
+        "QTableWidget { border: 1px solid #e7eaee; border-radius: 14px; background: white; }"
+        "QHeaderView::section { background-color: #20242a; color: white; font-weight: 800;"
+        "                       padding: 8px; border: none; }"
+    );
+    layout->addWidget(d->updatesTable);
+
+    connect(refreshBtn, &QPushButton::clicked, this, &OrgModule::refreshOrgUpdates);
+
+    d->stack->addWidget(page);
+}
+
+void OrgModule::refreshOrgUpdates()
+{
+    QString providerName = d->updatesProviderName->text().trimmed();
+    if (providerName.isEmpty()) {
+        QMessageBox::information(this, "Enter Name", "Please enter your provider name.");
+        return;
+    }
+
+    d->updatesTable->setRowCount(0);
+
+    QSqlQuery query;
+    query.prepare(
+        "SELECT fd.donation_date, fd.food_type, fd.food_amount, fd.remaining_meals, "
+        "       COALESCE(aa.match_status, 'unmatched'), COALESCE(aa.delivery_status, 'pending') "
+        "FROM food_donations fd "
+        "LEFT JOIN all_addresses aa ON aa.source_type = 'donation' AND aa.source_id = fd.id "
+        "WHERE fd.provider_name = :name "
+        "ORDER BY fd.donation_date DESC"
+    );
+    query.bindValue(":name", providerName);
+
+    if (!query.exec()) {
+        QMessageBox::critical(this, "Error", query.lastError().text());
+        return;
+    }
+
+    while (query.next()) {
+        int row = d->updatesTable->rowCount();
+        d->updatesTable->insertRow(row);
+        d->updatesTable->setItem(row, 0, new QTableWidgetItem(query.value(0).toString()));
+        d->updatesTable->setItem(row, 1, new QTableWidgetItem(query.value(1).toString()));
+        d->updatesTable->setItem(row, 2, new QTableWidgetItem(query.value(2).toString() + " meals"));
+        d->updatesTable->setItem(row, 3, new QTableWidgetItem(query.value(3).toString() + " meals"));
+
+        QString matchStatus = query.value(4).toString();
+        QTableWidgetItem* matchItem = new QTableWidgetItem(matchStatus == "matched" ? "Matched" : "Pending");
+        if (matchStatus == "matched") {
+            matchItem->setBackground(QColor("#d4edda"));
+            matchItem->setForeground(QColor("#155724"));
+        } else {
+            matchItem->setBackground(QColor("#fff3cd"));
+            matchItem->setForeground(QColor("#856404"));
+        }
+        d->updatesTable->setItem(row, 4, matchItem);
+
+        QString deliveryStatus = query.value(5).toString();
+        QString deliveryText;
+        if (deliveryStatus == "delivered") deliveryText = "Delivered";
+        else if (deliveryStatus == "in_transit") deliveryText = "In Transit";
+        else deliveryText = "Pending";
+        QTableWidgetItem* deliveryItem = new QTableWidgetItem(deliveryText);
+        if (deliveryStatus == "delivered") {
+            deliveryItem->setBackground(QColor("#d4edda"));
+            deliveryItem->setForeground(QColor("#155724"));
+        } else if (deliveryStatus == "in_transit") {
+            deliveryItem->setBackground(QColor("#fff3cd"));
+            deliveryItem->setForeground(QColor("#856404"));
+        }
+        d->updatesTable->setItem(row, 5, deliveryItem);
+    }
+
+    if (d->updatesTable->rowCount() == 0) {
+        QMessageBox::information(this, "No Donations",
+            QString("No donations found for '%1'. Make sure the name matches exactly.").arg(providerName));
+    }
 }
 
 void OrgModule::submitRestaurant()
@@ -507,16 +751,21 @@ void OrgModule::submitDonation()
         QMessageBox::warning(this, "Invalid Amount", "Please enter a valid number of meals.");
         return;
     }
+    if (d->expiryDate->date() < QDate::currentDate()) {
+        QMessageBox::warning(this, "Expired Food", "Please choose today or a future expiry date.");
+        return;
+    }
     QSqlQuery safetyQuery;
 safetyQuery.prepare("INSERT INTO provider_safety_checks "
-    "(provider_name, provider_role, food_age, ingredients, storage_location, "
+    "(provider_name, provider_role, food_age, ingredients, expiry_date, storage_location, "
     "storage_temperature, allergen_info, safety_notes, photo_path) "
-    "VALUES (:provider_name, :provider_role, :food_age, :ingredients, "
+    "VALUES (:provider_name, :provider_role, :food_age, :ingredients, :expiry_date, "
     ":storage_location, :storage_temperature, :allergen_info, :safety_notes, :photo_path)");
 safetyQuery.bindValue(":provider_name", d->providerName->text().trimmed());
 safetyQuery.bindValue(":provider_role", d->providerRole->currentText());
 safetyQuery.bindValue(":food_age", d->foodAge->text().trimmed());
 safetyQuery.bindValue(":ingredients", d->ingredients->toPlainText().trimmed());
+safetyQuery.bindValue(":expiry_date", d->expiryDate->date().toString("yyyy-MM-dd"));
 safetyQuery.bindValue(":storage_location", d->storageLocation->text().trimmed());
 safetyQuery.bindValue(":storage_temperature", d->storageTemperature->text().trimmed());
 safetyQuery.bindValue(":allergen_info", d->allergenInfo->text().trimmed());
@@ -526,9 +775,9 @@ safetyQuery.exec();
     QSqlQuery query;
     query.prepare("INSERT INTO food_donations "
                   "(provider_name, provider_role, food_amount, remaining_meals, "
-                  "food_type, donation_location, delivery_method) "
+                  "food_type, donation_location, delivery_method, expiry_date) "
                   "VALUES (:provider_name, :provider_role, :food_amount, :remaining_meals, "
-                  ":food_type, :donation_location, :delivery_method)");
+                  ":food_type, :donation_location, :delivery_method, :expiry_date)");
     query.bindValue(":provider_name", d->providerName->text().trimmed());
     query.bindValue(":provider_role", d->providerRole->currentText());
     query.bindValue(":food_amount", foodAmountInt);
@@ -536,6 +785,7 @@ safetyQuery.exec();
     query.bindValue(":food_type", d->donationType->text().trimmed());
     query.bindValue(":donation_location", fullLocation);
     query.bindValue(":delivery_method", d->deliveryMethod->currentText());
+    query.bindValue(":expiry_date", d->expiryDate->date().toString("yyyy-MM-dd"));
 
     if (query.exec()) {
         QSqlQuery addrQuery;
@@ -561,12 +811,14 @@ safetyQuery.exec();
         }
 
         QMessageBox::information(this, "Success", "Donation submitted successfully.");
+        updateOrderStatusBar();
         d->providerName->clear();
         d->foodAmount->clear();
         d->donationType->clear();
         d->donationCity->clear();
         d->donationStreet->clear();
         d->donationAddressDetails->clear();
+d->expiryDate->setDate(QDate::currentDate().addDays(1));
 d->foodAge->clear();
 d->ingredients->clear();
 d->storageLocation->clear();

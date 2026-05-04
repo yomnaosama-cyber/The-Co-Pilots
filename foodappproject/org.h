@@ -17,9 +17,11 @@ private slots:
     void onRestaurantTab();
     void onOrganizationTab();
     void onDonationTab();
+    void onUpdatesTab();
     void submitRestaurant();
     void submitOrganization();
     void submitDonation();
+    void refreshOrgUpdates();
     void handleLogout();
 
 private:
@@ -27,6 +29,8 @@ private:
     void setupRestaurantPage();
     void setupOrganizationPage();
     void setupDonationPage();
+    void setupUpdatesPage();
+    void updateOrderStatusBar();
     void addLogoutButton();
     
     // Pimpl pattern for encapsulation

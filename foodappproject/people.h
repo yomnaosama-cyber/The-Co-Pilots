@@ -15,14 +15,18 @@ public:
 private slots:
     void handleSignUp();
     void handleMealRequest();
+    void handleUpdates();
     void handleLogout();
+    void refreshUpdates();
 
 private:
     void setupUI();
     void setupSignUpDialog();
     void setupMealRequestDialog();
+    void setupUpdatesDialog();
     void submitSignUp();
     void submitMealRequest();
+    void updateOrderStatusBar();
     void addLogoutButton();
     
     // Pimpl pattern for encapsulation
