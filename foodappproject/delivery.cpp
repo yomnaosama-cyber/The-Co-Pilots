@@ -931,13 +931,8 @@ void DeliveryModule::handlePickup()
                                  "&apiKey=%6"
                                  ).arg(acceptedOrderId)
                                  .arg(pickupLat).arg(pickupLng)
-                                 .arg(apiKey
-                                 "&pickupLat=%2&pickupLng=%3"
-                                 "&dropLat=%4&dropLng=%5"
-                                 "&apiKey=AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk"
-                                 ).arg(acceptedOrderId)
-                                 .arg(pickupLat).arg(pickupLng)
-                                 .arg(dropLat).arg(dropLng);
+                                 .arg(dropLat).arg(dropLng)
+                                 .arg(apiKey);
 
             
 QWebEngineView* mapView = new QWebEngineView();

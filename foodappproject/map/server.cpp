@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <iomanip>
+#include <cctype>
 #include <nlohmann/json.hpp>
 
 using tcp = boost::asio::ip::tcp;
@@ -106,10 +107,44 @@ std::string urlEncode(const std::string& input) {
     return encoded.str();
 }
 
+std::string normalizedAddress(std::string text) {
+    std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    return text;
+}
+
+json localGeocodeFallback(const std::string& address) {
+    const std::string normalized = normalizedAddress(address);
+
+    if (normalized.find("auc") != std::string::npos ||
+        normalized.find("american university") != std::string::npos ||
+        normalized.find("new cairo") != std::string::npos) {
+        return {{"lat", 30.0186}, {"lng", 31.5014}, {"source", "local-fallback"}};
+    }
+
+    if (normalized.find("festival") != std::string::npos ||
+        normalized.find("cfc") != std::string::npos) {
+        return {{"lat", 30.0286}, {"lng", 31.4086}, {"source", "local-fallback"}};
+    }
+
+    if (normalized.find("cairo") != std::string::npos) {
+        return {{"lat", 30.0444}, {"lng", 31.2357}, {"source", "local-fallback"}};
+    }
+
+    return json();
+}
+
 json geocodeAddress(const std::string& address) {
+    const json fallback = localGeocodeFallback(address);
+
     try {
         const std::string apiKey = googleApiKey();
         if (apiKey.empty()) {
+            if (!fallback.empty()) {
+                std::cout << "Local geocode fallback: " << address << "\n";
+                return fallback;
+            }
             return missingGoogleApiKey();
         }
 
@@ -153,6 +188,12 @@ json geocodeAddress(const std::string& address) {
     } catch (std::exception& e) {
         std::cerr << "Geocoding error: " << e.what() << std::endl;
     }
+
+    if (!fallback.empty()) {
+        std::cout << "Local geocode fallback after Google failure: " << address << "\n";
+        return fallback;
+    }
+
     return {{"error", "not found"}};
 }
 

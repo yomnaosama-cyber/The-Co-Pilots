@@ -116,11 +116,17 @@
     }
 
     function driverUrl() {
-        const url = `${serverBase}/driver_live.html?deliveryId=${encodeURIComponent(deliveryId)}`;
+        const driverParams = new URLSearchParams({
+            deliveryId,
+            pickupLat: String(pickup.lat),
+            pickupLng: String(pickup.lng),
+            dropLat: String(drop.lat),
+            dropLng: String(drop.lng)
+        });
         if (apiKey) {
-            return url + `&apiKey=${encodeURIComponent(apiKey)}`;
+            driverParams.set('apiKey', apiKey);
         }
-        return url;
+        return `${serverBase}/driver_live.html?${driverParams.toString()}`;
     }
 
     window.initApp = function initApp() {

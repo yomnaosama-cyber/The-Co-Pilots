@@ -75,6 +75,58 @@
             width: 100%;
             height: calc(100vh - 140px);
         }
+        .fallback-map {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background:
+                linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+                linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+                radial-gradient(circle at 20% 80%, #253f34 0, transparent 32%),
+                radial-gradient(circle at 80% 20%, #3f2d25 0, transparent 34%),
+                #101820;
+            background-size: 42px 42px, 42px 42px, auto, auto, auto;
+        }
+        .fallback-pin {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            min-width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            border: 3px solid #fff;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.38);
+            color: white;
+            font-weight: 900;
+        }
+        .fallback-label {
+            position: absolute;
+            transform: translate(-50%, 20px);
+            padding: 5px 8px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.68);
+            color: white;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .pickup-pin { background: #2e7d32; }
+        .drop-pin { background: #c62828; }
+        .driver-pin { background: #1565c0; }
+        .fallback-note {
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.72);
+            color: #f5f5f5;
+            font-size: 13px;
+            line-height: 1.35;
+        }
     </style>
 </head>
 <body>
@@ -130,12 +182,86 @@ const navEtaEl      = document.getElementById('nav-eta');
 
 deliveryIdEl.textContent = deliveryId || 'Missing ID';
 
-let map, directionsService, directionsRenderer, driverMarker;
+let map, directionsService, directionsRenderer, driverMarker, pickupMarker, dropMarker;
+let usingFallbackMap = false;
+let fallbackDriverPosition = null;
 let pickup = null, drop = null;
 let watchId = null, lastSentAt = 0, lastDriverPos = null;
 let phase = 'on_way_to_pickup';
 let routeSteps = [];
 let currentStepIdx = 0;
+
+function pointFromParams(latKey, lngKey) {
+    const point = {
+        lat: Number(params.get(latKey)),
+        lng: Number(params.get(lngKey))
+    };
+    return Number.isFinite(point.lat) && Number.isFinite(point.lng) ? point : null;
+}
+
+pickup = pointFromParams('pickupLat', 'pickupLng');
+drop = pointFromParams('dropLat', 'dropLng');
+
+function fallbackPosition(point) {
+    if (!pickup || !drop || !point) return { x: 50, y: 50 };
+    const minLat = Math.min(pickup.lat, drop.lat);
+    const maxLat = Math.max(pickup.lat, drop.lat);
+    const minLng = Math.min(pickup.lng, drop.lng);
+    const maxLng = Math.max(pickup.lng, drop.lng);
+    const lngSpan = Math.max(0.000001, maxLng - minLng);
+    const latSpan = Math.max(0.000001, maxLat - minLat);
+    const x = Math.max(8, Math.min(92, ((point.lng - minLng) / lngSpan) * 76 + 12));
+    const y = Math.max(8, Math.min(92, 88 - ((point.lat - minLat) / latSpan) * 76));
+    return { x, y };
+}
+
+function addFallbackPin(container, point, label, className, title) {
+    const pos = fallbackPosition(point);
+    const pin = document.createElement('div');
+    pin.className = `fallback-pin ${className}`;
+    pin.style.left = `${pos.x}%`;
+    pin.style.top = `${pos.y}%`;
+    pin.textContent = label;
+    container.appendChild(pin);
+
+    const text = document.createElement('div');
+    text.className = 'fallback-label';
+    text.style.left = `${pos.x}%`;
+    text.style.top = `${pos.y}%`;
+    text.textContent = title;
+    container.appendChild(text);
+}
+
+function showFallbackMap(reason) {
+    usingFallbackMap = true;
+    const mapEl = document.getElementById('map');
+    mapEl.innerHTML = '';
+
+    const stage = document.createElement('div');
+    stage.className = 'fallback-map';
+    mapEl.appendChild(stage);
+
+    if (pickup && drop) {
+        addFallbackPin(stage, pickup, 'P', 'pickup-pin', 'Pickup');
+        addFallbackPin(stage, drop, 'D', 'drop-pin', 'Delivery');
+        if (fallbackDriverPosition) {
+            addFallbackPin(stage, fallbackDriverPosition, 'You', 'driver-pin', 'Driver');
+        }
+        phaseEl.textContent = phase === 'on_way_to_delivery' ? 'Go to Drop' : 'Go to Pickup';
+        navInstrEl.textContent = 'Local fallback map loaded. Press Start to enable GPS.';
+    } else {
+        navInstrEl.textContent = 'Map fallback loaded, but this link has no pickup/drop coordinates.';
+    }
+
+    const note = document.createElement('div');
+    note.className = 'fallback-note';
+    note.textContent = `${reason}. This local fallback still lets you test pickup, delivery, and GPS without Google Maps.`;
+    stage.appendChild(note);
+}
+
+window.gm_authFailure = function () {
+    showFallbackMap('Google Maps API key was rejected');
+};
 
 // ── helpers ─────────────────────────────────────────────
 
@@ -209,7 +335,7 @@ function setBannerRoute(result) {
 // ── routing ─────────────────────────────────────────────
 
 function drawRoute(origin, destination) {
-    if (!origin || !destination) return;
+    if (!origin || !destination || usingFallbackMap || !directionsService) return;
     directionsService.route({
         origin,
         destination,
@@ -226,23 +352,44 @@ function drawRoute(origin, destination) {
 
 // ── job coords ───────────────────────────────────────────
 
+function showJobCoords() {
+    if (!pickup || !drop) return;
+    if (usingFallbackMap) {
+        showFallbackMap('Google Maps is unavailable');
+        return;
+    }
+    if (!map) return;
+
+    if (!pickupMarker) {
+        pickupMarker = new google.maps.Marker({ map, position: pickup, label: 'P', title: 'Pickup' });
+    } else {
+        pickupMarker.setPosition(pickup);
+    }
+
+    if (!dropMarker) {
+        dropMarker = new google.maps.Marker({ map, position: drop, label: 'D', title: 'Drop' });
+    } else {
+        dropMarker.setPosition(drop);
+    }
+
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend(pickup);
+    bounds.extend(drop);
+    map.fitBounds(bounds);
+
+    phaseEl.textContent = 'Go to Pickup';
+    navInstrEl.textContent = 'Pickup and delivery loaded. Press Start to enable GPS.';
+}
+
 async function loadJobCoords() {
+    showJobCoords();
     try {
-        const res  = await fetch(`${serverBase}/job-coords?id=${encodeURIComponent(deliveryId)}`);
+        const res = await fetch(`${serverBase}/job-coords?id=${encodeURIComponent(deliveryId)}`);
         if (!res.ok) return;
         const data = await res.json();
-        pickup = { lat: data.pickup_lat, lng: data.pickup_lng };
-        drop   = { lat: data.drop_lat,   lng: data.drop_lng   };
-
-        new google.maps.Marker({ map, position: pickup, label: 'P', title: 'Pickup' });
-        new google.maps.Marker({ map, position: drop,   label: 'D', title: 'Drop'   });
-
-        const bounds = new google.maps.LatLngBounds();
-        bounds.extend(pickup);
-        bounds.extend(drop);
-        map.fitBounds(bounds);
-
-        phaseEl.textContent = 'Go to Pickup';
+        pickup = { lat: Number(data.pickup_lat), lng: Number(data.pickup_lng) };
+        drop = { lat: Number(data.drop_lat), lng: Number(data.drop_lng) };
+        showJobCoords();
     } catch (e) {
         console.warn('job-coords:', e.message);
     }
@@ -253,6 +400,11 @@ async function loadJobCoords() {
 function updateDriverMarker(lat, lng) {
     const pos = { lat, lng };
     lastDriverPos = pos;
+    fallbackDriverPosition = pos;
+    if (usingFallbackMap) {
+        showFallbackMap('Google Maps is unavailable');
+        return;
+    }
     if (!driverMarker) {
         driverMarker = new google.maps.Marker({
             map, position: pos, title: 'You',
@@ -353,14 +505,22 @@ window.initApp = function () {
         polylineOptions: { strokeColor: '#1565c0', strokeWeight: 7, strokeOpacity: 0.9 }
     });
 
+    if (pickup && drop) showJobCoords();
     if (deliveryId) loadJobCoords();
 };
 
-const script   = document.createElement('script');
-script.src     = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&callback=initApp&loading=async`;
-script.async   = true;
-script.defer   = true;
+const script = document.createElement('script');
+script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&callback=initApp&loading=async`;
+script.async = true;
+script.defer = true;
+script.onerror = () => showFallbackMap('Google Maps script failed to load');
 document.head.appendChild(script);
+
+setTimeout(() => {
+    if (!map && !usingFallbackMap) {
+        showFallbackMap('Google Maps did not finish loading');
+    }
+}, 7000);
 </script>
 </body>
 </html>
