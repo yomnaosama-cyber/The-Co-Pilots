@@ -7,10 +7,28 @@
 #include <QStringList>
 #include <QRegularExpression>
 #include <QDate>
+#include <QStandardPaths>
+#include <QDir>
 
 bool DatabaseManager::initDatabase() {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("food_sharing.db");
+    
+    // Read database path from environment variable
+    // Fallback to local file if not set
+    QString dbPath = qgetenv("FOODAPP_DB_PATH");
+    if (dbPath.isEmpty()) {
+        dbPath = "food_sharing.db";
+    } else {
+        // Ensure directory exists if using a custom path
+        QFileInfo fileInfo(dbPath);
+        QDir dir = fileInfo.absoluteDir();
+        if (!dir.exists()) {
+            dir.mkpath(".");
+        }
+    }
+    
+    qDebug() << "Database path:" << dbPath;
+    db.setDatabaseName(dbPath);
 
     if (!db.open()) {
         QMessageBox::critical(nullptr, "Database Error", "Could not open database");

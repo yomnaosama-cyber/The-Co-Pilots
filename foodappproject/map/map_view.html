@@ -116,7 +116,11 @@
     }
 
     function driverUrl() {
-        return `${serverBase}/driver_live.html?deliveryId=${encodeURIComponent(deliveryId)}`;
+        const url = `${serverBase}/driver_live.html?deliveryId=${encodeURIComponent(deliveryId)}`;
+        if (apiKey) {
+            return url + `&apiKey=${encodeURIComponent(apiKey)}`;
+        }
+        return url;
     }
 
     window.initApp = function initApp() {

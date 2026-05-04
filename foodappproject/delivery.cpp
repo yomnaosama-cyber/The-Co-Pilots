@@ -55,15 +55,32 @@ public:
 
 static void startTrackingServer(DeliveryModulePrivate* d)
 {
+    // Check if this device should run the map server
+    QString runServerEnv = qgetenv("FOODAPP_RUN_SERVER");
+    bool shouldRunServer = (runServerEnv == "1" || runServerEnv == "true");
+    
+    if (!shouldRunServer) {
+        qDebug() << "Map server disabled (FOODAPP_RUN_SERVER not set or 0)";
+        return;
+    }
+    
     QString serverBinary = QCoreApplication::applicationDirPath() + "/map_server";
     QString htmlDir      = QString(MAP_SOURCE_DIR);
 
     d->serverProcess = new QProcess();
 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("GOOGLE_MAPS_API_KEY", "AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk");
+    
+    // Read Google Maps API key from environment variable
+    // Fallback to hardcoded key if not provided (for backward compatibility)
+    QString apiKey = qgetenv("GOOGLE_MAPS_API_KEY");
+    if (apiKey.isEmpty()) {
+        apiKey = "AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk";
+    }
+    env.insert("GOOGLE_MAPS_API_KEY", apiKey);
     d->serverProcess->setProcessEnvironment(env);
 
+    qDebug() << "Starting map server from:" << serverBinary;
     d->serverProcess->start(serverBinary, QStringList() << htmlDir);
 }
 
@@ -812,8 +829,14 @@ void DeliveryModule::handlePickup()
     updateQuery.bindValue(":id", acceptedOrderId);
     updateQuery.exec();
 
+    // Get server base URL from environment variable
+    QString serverBaseUrl = qgetenv("FOODAPP_SERVER_BASE_URL");
+    if (serverBaseUrl.isEmpty()) {
+        serverBaseUrl = "http://localhost:3000";
+    }
+    
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
-    QNetworkRequest request(QUrl("http://localhost:3000/geocode"));
+    QNetworkRequest request(QUrl(serverBaseUrl + "/geocode"));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject pickupJson;
@@ -874,8 +897,13 @@ void DeliveryModule::handlePickup()
             }
 
             // Send job coords to server so driver_live.html can fetch them
+            QString serverBaseUrl = qgetenv("FOODAPP_SERVER_BASE_URL");
+            if (serverBaseUrl.isEmpty()) {
+                serverBaseUrl = "http://localhost:3000";
+            }
+            
             QNetworkAccessManager* orderManager = new QNetworkAccessManager(this);
-            QNetworkRequest orderRequest(QUrl("http://localhost:3000/order"));
+            QNetworkRequest orderRequest(QUrl(serverBaseUrl + "/order"));
             orderRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
             QJsonObject orderJson;
@@ -885,14 +913,25 @@ void DeliveryModule::handlePickup()
             orderJson["drop_lat"]    = dropLat;
             orderJson["drop_lng"]    = dropLng;
 
-            QNetworkReply* orderReply = orderManager->post(
-                orderRequest, QJsonDocument(orderJson).toJson());
-            connect(orderReply, &QNetworkReply::finished,
-                    orderReply, &QNetworkReply::deleteLater);
-
+            // Build map URL with environment-configured server and API key
+            QString apiKey = qgetenv("GOOGLE_MAPS_API_KEY");
+            if (apiKey.isEmpty()) {
+                apiKey = "AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk";
+            }
+            QString serverBaseUrl2 = qgetenv("FOODAPP_SERVER_BASE_URL");
+            if (serverBaseUrl2.isEmpty()) {
+                serverBaseUrl2 = "http://localhost:3000";
+            }
+            
             QString mapUrl = QString(
-                                 "http://localhost:3000/map_view.html"
+                                 serverBaseUrl2 + "/map_view.html"
                                  "?deliveryId=%1"
+                                 "&pickupLat=%2&pickupLng=%3"
+                                 "&dropLat=%4&dropLng=%5"
+                                 "&apiKey=%6"
+                                 ).arg(acceptedOrderId)
+                                 .arg(pickupLat).arg(pickupLng)
+                                 .arg(apiKey
                                  "&pickupLat=%2&pickupLng=%3"
                                  "&dropLat=%4&dropLng=%5"
                                  "&apiKey=AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk"

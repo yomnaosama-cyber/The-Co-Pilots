@@ -112,10 +112,10 @@
 <div id="map"></div>
 
 <script>
-const GOOGLE_API_KEY = 'AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk';
+const params      = new URLSearchParams(window.location.search);
+const GOOGLE_API_KEY = params.get('apiKey') || 'AIzaSyBbj933QAzPs-r3dMKlUQRMN8ElcFXEeRk';
 const serverBase  = (window.location.origin && window.location.origin !== 'null')
                     ? window.location.origin : 'http://localhost:3000';
-const params      = new URLSearchParams(window.location.search);
 const deliveryId  = params.get('deliveryId') || params.get('id');
 
 const deliveryIdEl  = document.getElementById('delivery-id');
