@@ -30,6 +30,9 @@
 #include <QWebEngineSettings>
 #include <QWebEngineProfile>
 #include <QWebEnginePage>
+#include <QScrollArea>
+#include <QFrame>
+#include <QSizePolicy>
 
 class DeliveryModulePrivate {
 public:

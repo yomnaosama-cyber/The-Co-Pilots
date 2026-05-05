@@ -18,6 +18,9 @@
 #include <QHeaderView>
 #include <QProgressBar>
 #include <QTimer>
+#include <QScrollArea>
+#include <QFrame>
+#include <QSizePolicy>
 
 class PeopleModulePrivate {
 public:
