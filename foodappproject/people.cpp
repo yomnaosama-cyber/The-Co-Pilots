@@ -58,16 +58,27 @@ PeopleModule::~PeopleModule()
 void PeopleModule::setupUI()
 {
     setWindowTitle("People in Need");
-    setMinimumSize(900, 680);
+    setMinimumSize(760, 520);
     setStyleSheet("QMainWindow { background-color: #fffdf8; }");
 
     QWidget* central = new QWidget();
     setCentralWidget(central);
 
-    QVBoxLayout* layout = new QVBoxLayout(central);
+    // Make content scrollable on small displays
+    QScrollArea* scroll = new QScrollArea(central);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setWidgetResizable(true);
+    QWidget* scrollContent = new QWidget();
+    scroll->setWidget(scrollContent);
+
+    QVBoxLayout* layout = new QVBoxLayout(scrollContent);
     layout->setAlignment(Qt::AlignHCenter);
-    layout->setSpacing(24);
-    layout->setContentsMargins(44, 34, 44, 34);
+    layout->setSpacing(18);
+    layout->setContentsMargins(28, 24, 28, 24);
+
+    QVBoxLayout* centralLayout = new QVBoxLayout(central);
+    centralLayout->setContentsMargins(0,0,0,0);
+    centralLayout->addWidget(scroll);
 
     QLabel* header = new QLabel("People in Need");
     header->setFont(QFont("Arial", 40, QFont::Bold));
@@ -138,28 +149,28 @@ void PeopleModule::setupUI()
         "}";
 
     QPushButton* signupBtn = new QPushButton("Sign Up");
-    signupBtn->setMinimumWidth(320);
     signupBtn->setStyleSheet(buttonStyle);
     signupBtn->setCursor(Qt::PointingHandCursor);
+    signupBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     QPushButton* requestBtn = new QPushButton("Request Meals");
-    requestBtn->setMinimumWidth(320);
     requestBtn->setStyleSheet(buttonStyle);
     requestBtn->setCursor(Qt::PointingHandCursor);
+    requestBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     QPushButton* updatesBtn = new QPushButton("View Updates");
-    updatesBtn->setMinimumWidth(320);
     updatesBtn->setStyleSheet(buttonStyle);
     updatesBtn->setCursor(Qt::PointingHandCursor);
+    updatesBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     QWidget* statusBar = new QWidget();
-    statusBar->setMinimumWidth(560);
     statusBar->setStyleSheet(
         "QWidget { background-color: #ffffff; border: 1px solid #e7eaee; border-radius: 18px; }"
         "QLabel { background: transparent; border: none; }"
         "QProgressBar { background-color: #f2f4f7; border: none; border-radius: 7px; height: 14px; text-align: center; color: #20242a; font-weight: 800; }"
         "QProgressBar::chunk { background-color: #20a675; border-radius: 7px; }"
     );
+    statusBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     QVBoxLayout* statusLayout = new QVBoxLayout(statusBar);
     statusLayout->setContentsMargins(20, 14, 20, 14);
     statusLayout->setSpacing(7);
@@ -203,7 +214,7 @@ void PeopleModule::setupSignUpDialog()
 {
     d->signwindow = new QMainWindow();
     d->signwindow->setWindowTitle("Sign Up for Assistance");
-    d->signwindow->setMinimumSize(620, 650);
+    d->signwindow->setMinimumSize(520, 420);
     d->signwindow->setStyleSheet(
         "QMainWindow { background-color: #fffdf8; }"
         "QLabel { color: #20242a; font-size: 15px; font-weight: 800; }"
@@ -225,32 +236,37 @@ void PeopleModule::setupSignUpDialog()
     QLabel* nameLabel = new QLabel("Enter Your Name:");
     d->peoplename = new QLineEdit();
     d->peoplename->setPlaceholderText("Your Name");
-    d->peoplename->setMinimumSize(500, 52);
+    d->peoplename->setMaximumWidth(520);
+    d->peoplename->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     // ID
     QLabel* idLabel = new QLabel("Enter Your ID:");
     d->peopleid = new QLineEdit();
     d->peopleid->setPlaceholderText("Your ID");
-    d->peopleid->setMinimumSize(500, 52);
+    d->peopleid->setMaximumWidth(520);
+    d->peopleid->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     QLabel* addressLabelLabel = new QLabel("Enter Your Address:");
     d->peopleaddress1 = new QLineEdit();
     d->peopleaddress1->setPlaceholderText("Your Address");
-    d->peopleaddress1->setMinimumSize(500, 52);
+    d->peopleaddress1->setMaximumWidth(520);
+    d->peopleaddress1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     // Contact
     QLabel* contactLabel = new QLabel("Enter Your Contact Info:");
     d->peoplecontact = new QLineEdit();
     d->peoplecontact->setPlaceholderText("Your Contact Info");
-    d->peoplecontact->setMinimumSize(500, 52);
+    d->peoplecontact->setMaximumWidth(520);
+    d->peoplecontact->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     // Notes
     QLabel* noteLabel = new QLabel("Additional notes or dietary restrictions:");
     noteLabel->setWordWrap(true);
-    noteLabel->setMinimumWidth(500);
+    noteLabel->setMaximumWidth(520);
     d->peoplenote = new QLineEdit();
     d->peoplenote->setPlaceholderText("Additional Notes");
-    d->peoplenote->setMinimumSize(500, 52);
+    d->peoplenote->setMaximumWidth(520);
+    d->peoplenote->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     QPushButton* submitBtn = new QPushButton("Submit");
     submitBtn->setMinimumSize(180, 52);
