@@ -6,6 +6,8 @@
 #include <QFrame>
 #include <QLabel>
 
+class QGridLayout;
+class QPushButton;
 class DeliveryModule;
 class PeopleModule;
 class OrgModule;
@@ -38,6 +40,13 @@ private:
     QBoxLayout* m_heroLayout = nullptr;
     QFrame* m_riderScene = nullptr;
     QLabel* m_heroTitle = nullptr;
+    QGridLayout* m_roleGrid = nullptr;
+    QPushButton* m_deliveryButton = nullptr;
+    QPushButton* m_organizationsButton = nullptr;
+    QPushButton* m_peopleButton = nullptr;
+    QPushButton* m_howItWorksNav = nullptr;
+    QPushButton* m_aboutNav = nullptr;
+    QPushButton* m_contactNav = nullptr;
 };
 
 #endif // MAINWINDOW_H
