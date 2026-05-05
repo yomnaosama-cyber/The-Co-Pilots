@@ -13,11 +13,7 @@ int main(int argc, char* argv[]) {
     // Print configuration for debugging
     qDebug() << "=== Food Sharing App Configuration ===";
     
-    QString dbPath = qgetenv("FOODAPP_DB_PATH");
-    if (dbPath.isEmpty()) {
-        dbPath = "food_sharing.db (local)";
-    }
-    qDebug() << "Database Path:" << dbPath;
+    qDebug() << "Database Path:" << DatabaseManager::databasePath();
     
     QString serverUrl = qgetenv("FOODAPP_SERVER_BASE_URL");
     if (serverUrl.isEmpty()) {

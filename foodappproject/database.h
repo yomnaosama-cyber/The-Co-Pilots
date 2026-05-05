@@ -7,6 +7,7 @@ class DatabaseManager {
 public:
     // Initialize the database and create all necessary tables
     static bool initDatabase();
+    static QString databasePath();
     // Function for matching addresses
     static void matchAddresses();
     
