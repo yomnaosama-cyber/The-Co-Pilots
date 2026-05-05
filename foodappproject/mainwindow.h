@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QBoxLayout>
+#include <QFrame>
+#include <QLabel>
 
 class DeliveryModule;
 class PeopleModule;
@@ -24,11 +27,17 @@ private slots:
 
 private:
     void setupUI();
+    void resizeEvent(QResizeEvent* event) override;
     
     // Modules
     DeliveryModule *deliveryModule;
     PeopleModule *peopleModule;
     OrgModule *orgModule;
+
+    // Responsive helpers
+    QBoxLayout* m_heroLayout = nullptr;
+    QFrame* m_riderScene = nullptr;
+    QLabel* m_heroTitle = nullptr;
 };
 
 #endif // MAINWINDOW_H

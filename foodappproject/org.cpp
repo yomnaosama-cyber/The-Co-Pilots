@@ -85,7 +85,7 @@ OrgModule::~OrgModule()
 void OrgModule::setupUI()
 {
     setWindowTitle("Provider Registration");
-    setMinimumSize(900, 740);
+    setMinimumSize(760, 520);
     setStyleSheet(
         "QDialog { background-color: #fffdf8; }"
         "QLabel { color: #20242a; font-size: 14px; font-weight: 800; }"
@@ -193,10 +193,14 @@ void OrgModule::setupUI()
     QPushButton* organizationBtn = new QPushButton("Organization");
     QPushButton* donateBtn = new QPushButton("Donation Details");
     QPushButton* updatesBtn = new QPushButton("Updates");
-    restaurantBtn->setMinimumWidth(150);
-    organizationBtn->setMinimumWidth(160);
-    donateBtn->setMinimumWidth(170);
-    updatesBtn->setMinimumWidth(130);
+    restaurantBtn->setMinimumWidth(110);
+    restaurantBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    organizationBtn->setMinimumWidth(110);
+    organizationBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    donateBtn->setMinimumWidth(120);
+    donateBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    updatesBtn->setMinimumWidth(100);
+    updatesBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     updatesBtn->setStyleSheet(
         "QPushButton { background-color: #20242a; color: white; border: none;"
         "              border-radius: 22px; padding: 11px 18px; font-weight: 900; }"
@@ -209,9 +213,13 @@ void OrgModule::setupUI()
     switchLayout->addWidget(updatesBtn);
     mainLayout->addLayout(switchLayout);
 
+    // Make the stacked pages scrollable so small screens can access all fields
     d->stack = new QStackedWidget(this);
-    d->stack->setMinimumHeight(460);
-    mainLayout->addWidget(d->stack);
+    QScrollArea* stackScroll = new QScrollArea(this);
+    stackScroll->setWidgetResizable(true);
+    stackScroll->setFrameShape(QFrame::NoFrame);
+    stackScroll->setWidget(d->stack);
+    mainLayout->addWidget(stackScroll);
 
     setupRestaurantPage();
     setupOrganizationPage();

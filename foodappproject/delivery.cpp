@@ -107,16 +107,28 @@ DeliveryModule::~DeliveryModule()
 void DeliveryModule::setupUI()
 {// this is the delivery system
     setWindowTitle("Delivery");
-    setMinimumSize(900, 680);
+    setMinimumSize(760, 520);
     setStyleSheet("QMainWindow { background-color: #fffdf8; }");
 
     QWidget* central = new QWidget();
     setCentralWidget(central);
 
-    QVBoxLayout* layout = new QVBoxLayout(central);
+    // Make the main content scrollable on smaller screens
+    QScrollArea* scroll = new QScrollArea(central);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setWidgetResizable(true);
+    QWidget* scrollContent = new QWidget();
+    scroll->setWidget(scrollContent);
+
+    QVBoxLayout* layout = new QVBoxLayout(scrollContent);
     layout->setAlignment(Qt::AlignHCenter);
-    layout->setSpacing(24);
-    layout->setContentsMargins(44, 34, 44, 34);
+    layout->setSpacing(20);
+    layout->setContentsMargins(28, 22, 28, 22);
+
+    // add scroll into central
+    QVBoxLayout* centralLayout = new QVBoxLayout(central);
+    centralLayout->setContentsMargins(0,0,0,0);
+    centralLayout->addWidget(scroll);
 
     QLabel* header = new QLabel("Delivery System");
     header->setFont(QFont("Arial", 40, QFont::Bold));
@@ -182,9 +194,9 @@ void DeliveryModule::setupUI()
     signUpBtn->setCursor(Qt::PointingHandCursor);
 
     QPushButton* notificationsBtn = new QPushButton("Delivery notifications");
-    notificationsBtn->setMinimumWidth(320);
     notificationsBtn->setStyleSheet(buttonStyle);
     notificationsBtn->setCursor(Qt::PointingHandCursor);
+    notificationsBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     QPushButton* pickupBtn = new QPushButton("Pickup");
     pickupBtn->setStyleSheet(buttonStyle);
@@ -200,10 +212,18 @@ void DeliveryModule::setupUI()
     visualLayout->addWidget(createVisualCard("02", "Fast pickup"));
     visualLayout->addWidget(createVisualCard("03", "Map tracking"));
     layout->addWidget(visualStrip);
-    layout->addWidget(signUpBtn);
-    layout->addWidget(notificationsBtn);
-    layout->addWidget(pickupBtn);
-    layout->addWidget(loginBtn);
+
+    // Action buttons: place in horizontal row on wide screens, vertical stack on small
+    QWidget* actions = new QWidget();
+    QHBoxLayout* actionsLayout = new QHBoxLayout(actions);
+    actionsLayout->setSpacing(12);
+    actionsLayout->setContentsMargins(0,0,0,0);
+    actionsLayout->addWidget(signUpBtn);
+    actionsLayout->addWidget(notificationsBtn);
+    actionsLayout->addWidget(pickupBtn);
+    actionsLayout->addWidget(loginBtn);
+    actionsLayout->addStretch();
+    layout->addWidget(actions);
     layout->addStretch();
 
     setupSignUpDialog();
@@ -222,7 +242,7 @@ void DeliveryModule::setupSignUpDialog()
 {
     d->signUpDialog = new QDialog(this);
     d->signUpDialog->setWindowTitle("Delivery Sign-Up");
-    d->signUpDialog->setMinimumSize(560, 680);
+    d->signUpDialog->setMinimumSize(480, 420);
     d->signUpDialog->setStyleSheet(
         "QDialog { background-color: #fffdf8; }"
         "QLabel { color: #20242a; font-size: 15px; font-weight: 800; margin-top: 6px; }"
@@ -253,9 +273,15 @@ void DeliveryModule::setupSignUpDialog()
         "QPushButton:pressed { background-color: #c74f63; }"
     );
 
-    QVBoxLayout* layout = new QVBoxLayout(d->signUpDialog);
-    layout->setSpacing(12);
-    layout->setContentsMargins(34, 28, 34, 28);
+    // Use a scrollable dialog content so all fields are reachable on small screens
+    QScrollArea* dialogScroll = new QScrollArea(d->signUpDialog);
+    dialogScroll->setWidgetResizable(true);
+    dialogScroll->setFrameShape(QFrame::NoFrame);
+    QWidget* dialogContent = new QWidget();
+    dialogScroll->setWidget(dialogContent);
+    QVBoxLayout* layout = new QVBoxLayout(dialogContent);
+    layout->setSpacing(10);
+    layout->setContentsMargins(18, 14, 18, 14);
 
     // Create form fields
     QLabel* nameLabel = new QLabel("Name:");

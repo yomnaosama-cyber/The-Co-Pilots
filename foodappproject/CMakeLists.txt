@@ -50,13 +50,16 @@ if(FOODAPP_BUILD_APP)
 
     # Build the tracking server as a separate binary.
     find_package(Threads REQUIRED)
+    find_package(Boost REQUIRED)
+    find_package(OpenSSL REQUIRED)
     add_executable(map_server map/server.cpp)
     target_compile_features(map_server PRIVATE cxx_std_17)
+    target_compile_definitions(map_server PRIVATE BOOST_ERROR_CODE_HEADER_ONLY _WIN32_WINNT=0x0601)
+    target_include_directories(map_server SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
     target_link_libraries(map_server PRIVATE
         Threads::Threads
-        ssl
-        crypto
-        boost_system
+        OpenSSL::SSL
+        OpenSSL::Crypto
     )
     set_target_properties(map_server PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}

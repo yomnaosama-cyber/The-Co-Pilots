@@ -14,6 +14,8 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 #include <QEasingCurve>
+#include <QScrollArea>
+#include <QResizeEvent>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -32,7 +34,7 @@ MainWindow::~MainWindow()
 void MainWindow::setupUI()
 {
     setWindowTitle("Co-Pilots Food Sharing");
-    setMinimumSize(1180, 820);
+    setMinimumSize(800, 600);
     setStyleSheet(
         "QMainWindow { background-color: #ef3038; }"
         "QToolTip { background-color: #20242a; color: white; border: none; padding: 7px; border-radius: 6px; }"
@@ -41,7 +43,14 @@ void MainWindow::setupUI()
     QWidget* central = new QWidget();
     setCentralWidget(central);
 
-    QVBoxLayout* shellLayout = new QVBoxLayout(central);
+    // Wrap content in a scroll area so smaller screens can scroll vertically
+    QScrollArea* scroll = new QScrollArea(central);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setWidgetResizable(true);
+    QWidget* scrollContent = new QWidget();
+    scroll->setWidget(scrollContent);
+
+    QVBoxLayout* shellLayout = new QVBoxLayout(scrollContent);
     shellLayout->setContentsMargins(48, 38, 48, 38);
     shellLayout->setSpacing(0);
 
@@ -54,6 +63,10 @@ void MainWindow::setupUI()
         "}"
     );
     shellLayout->addWidget(appCanvas);
+    // put the scroll area into the central layout
+    QVBoxLayout* centralLayout = new QVBoxLayout(central);
+    centralLayout->setContentsMargins(0,0,0,0);
+    centralLayout->addWidget(scroll);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(appCanvas);
     mainLayout->setSpacing(22);
@@ -67,7 +80,7 @@ void MainWindow::setupUI()
     heroWidget->setStyleSheet("background: transparent;");
     QHBoxLayout* heroLayout = new QHBoxLayout(heroWidget);
     heroLayout->setContentsMargins(0, 8, 0, 2);
-    heroLayout->setSpacing(34);
+    heroLayout->setSpacing(18);
 
     QVBoxLayout* heroTextLayout = new QVBoxLayout();
     heroTextLayout->setSpacing(16);
@@ -76,17 +89,19 @@ void MainWindow::setupUI()
     heroKicker->setStyleSheet("color: #ef3038; font-size: 17px; font-weight: 900; background: transparent;");
 
     QLabel* heroTitle = new QLabel("Donate food.\nRequest meals.\nDeliver safely.");
-    heroTitle->setFont(QFont("Arial", 42, QFont::Bold));
+    heroTitle->setWordWrap(true);
+    heroTitle->setFont(QFont("Arial", 34, QFont::Bold));
     heroTitle->setStyleSheet("color: #20242a; background: transparent;");
 
     QLabel* heroText = new QLabel("Restaurants and organizations can offer extra meals, people can request help, and delivery volunteers can accept matched orders.");
     heroText->setWordWrap(true);
-    heroText->setMinimumHeight(58);
-    heroText->setMaximumWidth(480);
+    heroText->setMinimumHeight(48);
+    heroText->setMaximumWidth(600);
     heroText->setStyleSheet("color: #5f6670; font-size: 17px; font-weight: 600; background: transparent;");
 
     QPushButton* startButton = new QPushButton("Choose Your Role");
-    startButton->setFixedSize(190, 54);
+    startButton->setFixedHeight(54);
+    startButton->setMaximumWidth(220);
     startButton->setCursor(Qt::PointingHandCursor);
     startButton->setStyleSheet(
         "QPushButton {"
@@ -109,7 +124,8 @@ void MainWindow::setupUI()
     heroTextLayout->addStretch();
 
     QFrame* riderScene = new QFrame();
-    riderScene->setFixedSize(480, 315);
+    riderScene->setMinimumSize(360, 240);
+    riderScene->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     riderScene->setStyleSheet("QFrame { background-color: #fff3df; border: none; border-radius: 36px; }");
 
     QLabel* phone = new QLabel(riderScene);
@@ -217,6 +233,10 @@ void MainWindow::setupUI()
 
     heroLayout->addLayout(heroTextLayout, 1);
     heroLayout->addWidget(riderScene, 0, Qt::AlignRight | Qt::AlignVCenter);
+    // keep pointers for responsive adjustments
+    this->m_heroLayout = heroLayout;
+    this->m_riderScene = riderScene;
+    this->m_heroTitle = heroTitle;
     mainLayout->addWidget(heroWidget);
 
     QWidget* statsBand = new QWidget();
@@ -266,7 +286,7 @@ void MainWindow::setupUI()
 
     auto createMainCardButton = [&](const QString& badge, const QString& title, const QString& description, const QString& accent) {
         QPushButton* cardBtn = new QPushButton();
-        cardBtn->setMinimumSize(300, 205);
+        cardBtn->setMinimumSize(260, 180);
         cardBtn->setCursor(Qt::PointingHandCursor);
         cardBtn->setStyleSheet(buttonStyle);
 
@@ -395,6 +415,30 @@ void MainWindow::onOrganizationsClicked()
 {
     if (orgModule) {
         orgModule->exec();
+    }
+}
+
+void MainWindow::resizeEvent(QResizeEvent* event)
+{
+    QMainWindow::resizeEvent(event);
+
+    if (!m_heroLayout || !m_heroTitle || !m_riderScene)
+        return;
+
+    int w = event->size().width();
+
+    if (w < 900) {
+        m_heroLayout->setDirection(QBoxLayout::TopToBottom);
+        m_riderScene->setVisible(true);
+        QFont f = m_heroTitle->font();
+        f.setPointSize(24);
+        m_heroTitle->setFont(f);
+    } else {
+        m_heroLayout->setDirection(QBoxLayout::LeftToRight);
+        m_riderScene->setVisible(true);
+        QFont f = m_heroTitle->font();
+        f.setPointSize(34);
+        m_heroTitle->setFont(f);
     }
 }
 

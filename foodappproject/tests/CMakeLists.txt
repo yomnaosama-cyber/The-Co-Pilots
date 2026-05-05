@@ -91,6 +91,7 @@ set_target_properties(mock_tests PROPERTIES
 # Discover all tests for CTest
 # ============================================
 include(GoogleTest)
-gtest_discover_tests(db_tests)
-gtest_discover_tests(matcher_tests)
-gtest_discover_tests(mock_tests)
+set(MSVC_BIN "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64")
+gtest_discover_tests(db_tests PROPERTIES ENVIRONMENT "PATH=C:/Qt/6.11.0/msvc2022_64/bin;C:/vcpkg/installed/x64-windows/bin;${MSVC_BIN};$ENV{PATH}")
+gtest_discover_tests(matcher_tests PROPERTIES ENVIRONMENT "PATH=C:/Qt/6.11.0/msvc2022_64/bin;C:/vcpkg/installed/x64-windows/bin;${MSVC_BIN};$ENV{PATH}")
+gtest_discover_tests(mock_tests PROPERTIES ENVIRONMENT "PATH=C:/Qt/6.11.0/msvc2022_64/bin;C:/vcpkg/installed/x64-windows/bin;${MSVC_BIN};$ENV{PATH}")
